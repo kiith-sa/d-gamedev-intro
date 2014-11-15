@@ -11,9 +11,9 @@
 
 .. role:: footnote
 
-=========================
-Intro to game dev using D
-=========================
+========================
+Intro to gamedev using D
+========================
 
 :Author:
     Ferdinand Majerech
