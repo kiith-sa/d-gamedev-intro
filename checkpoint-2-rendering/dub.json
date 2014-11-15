@@ -1,0 +1,10 @@
+{
+     "name": "Asteroids",
+     "description": "A simple Asteroids clone",
+     "copyright": "Copyright © 2014, $NAME",
+     "authors": ["$NAME"],
+     "dependencies": {
+             "gfm:sdl2": "==1.2.5",
+             "gfm:math": "==1.2.5",
+     }
+}
