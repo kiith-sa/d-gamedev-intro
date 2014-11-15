@@ -2,8 +2,9 @@
 Intro to gamedev using D
 ========================
 
-This is a tutorial about writing a simple game in D. The tutorial is a bunch of HTML
-slides but it supposed to be used directly for copy-pasting code instead of being used as
+This is a tutorial about writing a simple game in D. The tutorial is a `bunch of HTML
+slides <http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/slides/index.html#>`_ but
+it supposed to be used directly for copy-pasting code instead of being used as
 a presentation. The focus is on making a game (for non-game developers) as opposed on
 learning D itself, so the code is somewhat C-like.
 

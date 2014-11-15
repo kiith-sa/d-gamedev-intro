@@ -1,14 +1,3 @@
-.. Packages needed:
-..
-.. g++/clang with -std=c++11
-.. time
-.. valgrind (only callgrind needed)
-.. kcachegrind
-.. graphviz
-.. linux-tools-common / linux-tools-generic
-.. some sort of diff
-
-
 .. role:: footnote
 
 ========================
@@ -44,16 +33,17 @@ What this is about
 Format of this... workshop
 --------------------------
 
-* Copy code (if not specified *where*, copy it outside of any function/class)
-* Explanation/questions
-* Test
-* Repeat
+#. Copy code
 
-???
+   If not specified *where*, copy it outside of any function/class
 
-* PROFIT (???)
+#. Explanation/questions
+#. Test
+#. While more code to copy go to 1.
+#. ???
+#. PROFIT (???)
 
-* Also, checkpoints
+Also, checkpoints
 
 
 --------
@@ -87,8 +77,9 @@ The tools
 Starting a project
 ------------------
 
-On this VM, we only have LDC2 - if using your own machine, follow `these steps <TODO>`_ to
-install a D compiler and DUB.
+On this VM, we only have LDC2 - if using your own machine, see `this article
+<https://github.com/kiith-sa/d-gamedev-intro/blob/master/setting_up.rst>`_ on how
+to set up an environment.
 
 * Create a directory
 * Type into terminal: ``dub init``
@@ -949,7 +940,7 @@ Collisions and dying (explanation)
   - **Ⓓ** ``objects[i + 1 .. $]`` - a slice of ``objects`` after the ``i``-th element
   - Colliding entities are marked as dead
 
-* ``entityDeaths`` uses `std.algorithm.filter <http://dlang.org/phobos/std_algorithm.html#.filter>`_ to filter dead entities 
+* ``entityDeaths`` uses `std.algorithm.filter <http://dlang.org/phobos/std_algorithm.html#.filter>`_ to filter dead entities
 
   - If the player ship is dead and there are more lives, respawn
 
@@ -1301,7 +1292,7 @@ D Links
 
 * `Programming in D <http://ddili.org/ders/d.en/index.html>`_ (by Ali Çehreli)
 
-  - Really good and comphrehensive introductory D book 
+  - Really good and comphrehensive introductory D book
   - Written for non-programmers so can be a bit slow
 
 * `Forum/newsgroup <forum.dlang.org>`_
@@ -1349,6 +1340,6 @@ Full list of `IDEs <http://wiki.dlang.org/IDEs>`_ and `Editors <http://wiki.dlan
 It's over
 =========
 
-
+`Full source <https://github.com/kiith-sa/d-gamedev-intro>`_
 
 `IHRA <http://web.ics.upjs.sk/ihra/>`_
