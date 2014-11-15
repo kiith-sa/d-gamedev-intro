@@ -43,7 +43,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Profiling'
+project = u'Intro to gamedev using D'
 copyright = u'2014, Ferdinand Majerech'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -167,7 +167,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Profiling'
+htmlhelp_basename = 'Intro to gamedev using D'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -186,7 +186,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'profiling.tex', u'Profiling',
+  ('index', 'profiling.tex', u'Intro to gamedev using D',
    u'Ferdinand Majerech', 'manual'),
 ]
 
@@ -216,7 +216,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'profiling', u'Profiling',
+    ('index', 'profiling', u'Intro to gamedev using D',
      [u'Ferdinand Majerech'], 1)
 ]
 
@@ -230,8 +230,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Profiling', u'Profiling',
-   u'Ferdinand Majerech', 'Profiling', 'One line description of project.',
+  ('index', 'Intro to gamedev using D', u'Intro to gamedev using D',
+   u'Ferdinand Majerech', 'Intro to gamedev using D', 'One line description of project.',
    'Miscellaneous'),
 ]
 
