@@ -1,5 +1,4 @@
 .dub
-slides/build
 docs.json
 __dummy.html
 *.o

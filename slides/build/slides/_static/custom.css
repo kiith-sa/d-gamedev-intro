@@ -1,0 +1,223 @@
+body 
+{
+    background: #41190A;
+}
+
+
+.slides > article 
+{
+    color: #303838;
+
+    width: 940px;
+    height: 700px;
+    font-size: 95%;
+    left: 50%;
+    top: 50%;
+    margin-left: -450px;
+    margin-top: -350px;
+    padding: 20px 40px;
+
+}
+
+.slides > article.level-1
+{
+    background: #FFFBF2;
+}
+
+.slides > article.level-2
+{
+    background: #F8F8F8;
+}
+
+.centered
+{
+    color: #000000;
+    font-size: 200%;
+    text-align: center;
+    margin-top: 35%;
+}
+
+p 
+{
+    margin: 10px 0 0;
+    padding: 0;
+}
+
+article h1 
+{
+    color: #690A00;
+}
+
+article h2
+{
+    border-top: 2px solid #690A00;
+    width: 100%;
+    color: #690A00;
+    font-size: 110%;
+    position: absolute;
+    padding-top:  1%;
+    padding-left: 5%;
+    left: 0%;
+    bottom: 2%;
+}
+
+article a
+{
+    /* font-size: 60%; */
+    font-family: 'DejaVu Sans Mono', Consolas, Monaco, monospace, serif;
+    font-size: 70%;
+}
+
+.footnote
+{
+    position: absolute;
+    color: #000000;
+    font-size: 80%;
+    right: 5%;
+    bottom: 5%;
+}
+
+.literal 
+{
+    background-color: rgba(0,0,0,.075);
+    border: 1px solid rgba(0,0,0,.05);
+    margin: 1px;
+    border-radius: 3px;
+
+    padding: 0 0.25em;
+    font-family: 'DejaVu Sans Mono', Consolas, Monaco, monospace, serif;
+    font-size: 70%;
+    font-style: normal;
+}
+
+pre
+{
+    line-height: 1.15em;
+
+    margin-top: 0.25em;
+    margin-bottom: 20px;
+    font-family: 'DejaVu Sans Mono', Consolas, Monaco, monospace, serif;
+    font-size: 45%;
+    font-style: normal;
+}
+
+ul li
+{
+    margin-bottom: 0.6em;
+}
+
+ul ul 
+{
+    margin-top: 0.55em;
+}
+
+ul ul li
+{
+    margin-bottom: 0.5em;
+}
+
+ul ul ul
+{
+    margin-top: 0.45em;
+}
+
+ul ul ul li
+{
+    margin-bottom: 0.4em;
+}
+
+ul ul ul ul
+{
+    margin-top: 0.35em;
+}
+
+ul ul ul ul li
+{
+    margin-bottom: 0.3em;
+}
+
+table.docutils
+{
+  background-color: #FFFBF2;
+  font-size: 75%;
+  margin-top: 16px;
+  overflow:hidden;
+  line-height: 1.6em;
+}
+table.docutils tr:nth-child(even) td
+{
+  background-color: #FDF3E0;
+}
+table.docutils p
+{
+  padding:0 .1em;
+}
+
+table.docutils .literal 
+{
+  font-size: 80%;
+}
+
+/* SUPER MEGA TABLE BORDER RADIUS HACK */
+table.docutils
+{
+    border-collapse: separate;
+    border-spacing: 0;
+    border: none;
+}
+table tr:first-child th, table tr:first-child td
+{
+    border-top: 1px solid #d8d8d8;
+}
+table tr:last-child th, table tr:last-child td
+{
+    border-bottom: 1px solid #d8d8d8;
+}
+table tr th:first-child, table tr td:first-child
+{
+    border-left: 1px solid #d8d8d8;
+}
+table tr th:last-child, table tr td:last-child
+{
+    border-right: 1px solid #d8d8d8;
+}
+/* top-left */
+table tr:first-child th:first-child, table tr:first-child td:first-child 
+{
+    border-top-left-radius: 3px;
+}
+/* top-right */
+table tr:first-child th:last-child, table tr:first-child td:last-child 
+{
+    border-top-right-radius: 3px;
+}
+/* bottom-left */
+table tr:last-child td:first-child 
+{
+    border-bottom-left-radius: 3px;
+}
+/* bottom-right */
+table tr:last-child td:last-child 
+{
+    border-bottom-right-radius: 3px;
+}
+/* END SUPER MEGA TABLE BORDER RADIUS HACK */
+
+table.docutils td, th
+{
+  padding: 0px 3px;
+  border: none;
+  border-right: 1px solid #d8d8d8;
+  border-bottom: 1px solid #d8d8d8;
+  border-left: none;
+  border-top: none;
+}
+
+
+
+video 
+{
+    display: block;
+    margin: 0 auto;
+    padding: 0;
+}

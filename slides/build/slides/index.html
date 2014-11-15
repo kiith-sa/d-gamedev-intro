@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Intro to gamedev using D &mdash; Profiling 2014.10.26 documentation</title>
+    
+    <link rel="stylesheet" href="_static/basic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/styles.css" type="text/css" />
+    <link rel="stylesheet" href="_static/slides.css" type="text/css" />
+    
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    
+
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2014.10.26',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/common.js"></script>
+    <script type="text/javascript" src="_static/slides.js"></script>
+    <script type="text/javascript" src="_static/sync.js"></script>
+    <script type="text/javascript" src="_static/controller.js"></script>
+    <script type="text/javascript" src="_static/init.js"></script>
+    
+    <link rel="top" title="Profiling 2014.10.26 documentation" href="#" /> 
+  </head>
+  <body>
+
+<section
+   id="slide_container"
+   class='slides layout-regular'>
+
+
+  <article class="slide level-1" id="intro-to-gamedev-using-d">
+<h1>Intro to gamedev using D</h1>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Author:</th><td class="field-body">Ferdinand Majerech</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="59%" />
+<col width="41%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">Enter</span></tt>, <tt class="docutils literal"><span class="pre">→</span></tt></td>
+<td>next slide</td>
+</tr>
+<tr class="row-even"><td><tt class="docutils literal"><span class="pre">Backspace</span></tt>, <tt class="docutils literal"><span class="pre">←</span></tt></td>
+<td>previous slide</td>
+</tr>
+<tr class="row-odd"><td><tt class="docutils literal"><span class="pre">T</span></tt></td>
+<td>overview</td>
+</tr>
+</tbody>
+</table>
+<p><a class="reference external" href="http://web.ics.upjs.sk/ihra/">IHRA</a></p>
+
+</article>
+<article class="slide level-2" id="what-this-is-about">
+<h2>What this is about</h2>
+<ul class="simple">
+<li>Gamedev through D, <strong>not</strong> D through gamedev</li>
+<li>Intro to a <em>project</em> in D</li>
+<li>Game is the focus<ul>
+<li>Code is mostly &quot;C/C++ with extras&quot;</li>
+<li>Most &quot;interesting&quot; D features ignored to avoid info overload</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="format-of-this-workshop">
+<h2>Format of this... workshop</h2>
+<ul class="simple">
+<li>Copy code (if not specified <em>where</em>, copy it outside of any function/class)</li>
+<li>Explanation/questions</li>
+<li>Test</li>
+<li>Repeat</li>
+</ul>
+<p>???</p>
+<ul class="simple">
+<li>PROFIT (???)</li>
+<li>Also, checkpoints</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="the-goal">
+<h2>The goal</h2>
+<video preload="auto" autoplay controls loop poster="../_static/asteroids.png">
+   <source src="_static/asteroids.webm" type="video/webm">
+</video>
+</article>
+<article class="slide level-2" id="the-tools">
+<h2>The tools</h2>
+<ul class="simple">
+<li>D has 3 popular compilers:<ul>
+<li><tt class="docutils literal"><span class="pre">dmd</span></tt>: fastest compilation, non-kosher OSS, always up-to-date</li>
+<li><tt class="docutils literal"><span class="pre">gdc</span></tt>: fastest code, OSS, 1-2 months behind, Debuntu repos</li>
+<li><tt class="docutils literal"><span class="pre">ldc2</span></tt>: good code, OSS, 1-2 months behind, Fedora repos</li>
+</ul>
+</li>
+<li><tt class="docutils literal"><span class="pre">dub</span></tt>:<ul>
+<li>Build system and package manager</li>
+<li>De-facto standard for D project management</li>
+<li>Still new, only stable recently</li>
+<li><a class="reference external" href="http://code.dlang.org">http://code.dlang.org</a></li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="starting-a-project">
+<h2>Starting a project</h2>
+<p>On this VM, we only have LDC2 - if using your own machine, follow <a class="reference external" href="TODO">these steps</a> to
+install a D compiler and DUB.</p>
+<ul class="simple">
+<li>Create a directory</li>
+<li>Type into terminal: <tt class="docutils literal"><span class="pre">dub</span> <span class="pre">init</span></tt></li>
+<li>This will create <tt class="docutils literal"><span class="pre">dub.json</span></tt> (project file), and <tt class="docutils literal"><span class="pre">source/app.d</span></tt> with a <tt class="docutils literal"><span class="pre">main()</span></tt></li>
+</ul>
+
+</article>
+<article class="slide level-2" id="dub-json">
+<h2><tt class="docutils literal"><span class="pre">dub.json</span></tt></h2>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">dub</span></tt> project file</li>
+<li>Already supported by some D IDEs</li>
+<li>Replace contents of <tt class="docutils literal"><span class="pre">dub.json</span></tt> with this:</li>
+</ul>
+<div class="highlight-d"><div class="highlight"><pre><span class="p">{</span>
+     <span class="s">&quot;name&quot;</span><span class="p">:</span> <span class="s">&quot;Asteroids&quot;</span><span class="p">,</span>
+     <span class="s">&quot;description&quot;</span><span class="p">:</span> <span class="s">&quot;A simple Asteroids clone&quot;</span><span class="p">,</span>
+     <span class="s">&quot;copyright&quot;</span><span class="p">:</span> <span class="s">&quot;Copyright © 2014, $NAME&quot;</span><span class="p">,</span>
+     <span class="s">&quot;authors&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s">&quot;$NAME&quot;</span><span class="p">],</span>
+     <span class="s">&quot;dependencies&quot;</span><span class="p">:</span> <span class="p">{</span>
+             <span class="s">&quot;gfm:sdl2&quot;</span><span class="p">:</span> <span class="s">&quot;==1.2.5&quot;</span><span class="p">,</span>
+             <span class="s">&quot;gfm:math&quot;</span><span class="p">:</span> <span class="s">&quot;==1.2.5&quot;</span><span class="p">,</span>
+     <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">dub</span></tt> automatically downloads/builds dependencies when needed</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="main">
+<h2>main()</h2>
+<ul class="simple">
+<li>Open <tt class="docutils literal"><span class="pre">source/app.d</span></tt>. You should see:</li>
+</ul>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">stdio</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="n">main</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">writeln</span><span class="p">(</span><span class="s">&quot;Edit source/app.d to start your project.&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">main()</span></tt> could also be e.g. <tt class="docutils literal"><span class="pre">int</span> <span class="pre">main(string[]</span> <span class="pre">args)</span></tt> like C</li>
+<li>Compile with <tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt>, and run with <tt class="docutils literal"><span class="pre">./asteroids</span></tt><ul>
+<li>Compiler must be specified (for now) if not default (DMD)</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="font-files">
+<h2>Font files</h2>
+<ul>
+<li><p class="first">With most games you want to ship a font with the game</p>
+<ul class="simple">
+<li>Text drawing needs special care (can't leave it to GTK/Qt/etc.)</li>
+<li>Fonts vary between systems</li>
+<li>Often a unique font is wanted for a game</li>
+</ul>
+</li>
+<li><p class="first">Get <a class="reference external" href="http://www.fontsquirrel.com/fonts/download/Droid-Sans">DroidSans.ttf</a></p>
+<p>Download/extract so <tt class="docutils literal"><span class="pre">DroidSans.ttf</span></tt> is in the same directory as <tt class="docutils literal"><span class="pre">dub.json</span></tt></p>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="some-imports-to-start-with">
+<h2>Some imports to start with</h2>
+<ul class="simple">
+<li>Copy to the top of <tt class="docutils literal"><span class="pre">source/app.d</span></tt></li>
+</ul>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">algorithm</span><span class="p">:</span> <span class="n">canFind</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">filter</span><span class="p">,</span> <span class="n">min</span><span class="p">,</span> <span class="n">remove</span><span class="p">;</span> <span class="c1">// (1)</span>
+<span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">math</span><span class="p">:</span> <span class="n">fmod</span><span class="p">,</span> <span class="n">PI</span><span class="p">;</span> <span class="c1">// (2)</span>
+<span class="k">import</span> <span class="n">gfm</span><span class="p">.</span><span class="n">math</span><span class="p">,</span> <span class="n">gfm</span><span class="p">.</span><span class="n">sdl2</span><span class="p">;</span> <span class="c1">// (3)</span>
+<span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">logger</span><span class="p">;</span> <span class="c1">// std.experimental.logger in newer versions</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><strong>Ⓓ</strong> <em>(1), (2)</em>: selective imports from modules/packages<ul>
+<li>Like <tt class="docutils literal"><span class="pre">from</span> <span class="pre">math</span> <span class="pre">import</span> <span class="pre">pi</span></tt> in Python</li>
+<li>Good to keep track of what is actually used</li>
+</ul>
+</li>
+<li><strong>Ⓓ</strong> <em>(3)</em>: import everything from 2 modules/packages<ul>
+<li>Like imports in Java or <tt class="docutils literal"><span class="pre">from</span> <span class="pre">math</span> <span class="pre">import</span> <span class="pre">*</span></tt> in Python</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-1" id="platform-code-sdl">
+<h1>Platform code (SDL)</h1>
+<ul class="simple">
+<li>Every game needs base code to deal with input, video, sound...<ul>
+<li>Writing this for all platforms is a stupid idea</li>
+<li><a class="reference external" href="http://libsdl.org">SDL2</a> exists, runs pretty much everywhere<ul>
+<li>Written in C</li>
+</ul>
+</li>
+<li>Different libs exist (Allegro, ClanLib, SFML), not quite as robust</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="gameplatform-stub-copy-explanation">
+<h2>GamePlatform stub (copy/explanation)</h2>
+<p>(Don't care about correct OOP here)</p>
+<p>Copy somewhere in <tt class="docutils literal"><span class="pre">source/app.d</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// Compile-time constants</span>
+<span class="k">enum</span> <span class="n">vec2i</span> <span class="n">gameArea</span>  <span class="p">=</span> <span class="n">vec2i</span><span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">600</span><span class="p">);</span>
+<span class="k">enum</span> <span class="n">vec2f</span> <span class="n">gameAreaF</span> <span class="p">=</span> <span class="n">vec2f</span><span class="p">(</span><span class="mf">800.0f</span><span class="p">,</span> <span class="mf">600.0f</span><span class="p">);</span>
+
+<span class="k">struct</span> <span class="n">GamePlatform</span>
+<span class="p">{</span>
+    <span class="n">SDL2</span> <span class="n">sdl2</span><span class="p">;</span>             <span class="c1">// Main SDL2 library, wrapped by gfm</span>
+    <span class="n">SDLTTF</span> <span class="n">sdlttf</span><span class="p">;</span>         <span class="c1">// SDL2 extension for font handling</span>
+    <span class="n">SDL2Window</span> <span class="n">window</span><span class="p">;</span>     <span class="c1">// Main game window</span>
+    <span class="n">SDL2Renderer</span> <span class="n">renderer</span><span class="p">;</span> <span class="c1">// Simple SDL2 builtin 2D renderer</span>
+    <span class="n">SDLFont</span> <span class="n">font</span><span class="p">;</span>          <span class="c1">// Font for our game</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">struct</span></tt>: value RAII type, no inheritance (kinda)</li>
+<li><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">enum</span></tt>: constant known at compile-time (not an <tt class="docutils literal"><span class="pre">enum</span></tt> type)</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="gameplatform-init-deinit-copy-into-gameplatform">
+<h2>GamePlatform - init/deinit (copy into GamePlatform)</h2>
+<div class="highlight-d"><div class="highlight"><pre>// Disable the default constructor
+@disable this();
+
+this(Logger log)
+{
+    sdl2   = new SDL2(log);
+    scope(failure) { sdl2.close(); }
+    sdlttf = new SDLTTF(sdl2);
+    scope(failure) { sdlttf.close(); }
+
+    // Hide mouse cursor
+    SDL_ShowCursor(SDL_DISABLE);
+
+    // Open the game window.
+    const windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS;
+    window = new SDL2Window(sdl2, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                            gameArea.x, gameArea.y, windowFlags);
+    scope(failure) { window.close(); }
+
+    // SDL renderer. For 2D drawing, this is easier to use than OpenGL.
+    renderer = new SDL2Renderer(window, SDL_RENDERER_ACCELERATED); // SDL_RENDERER_SOFTWARE
+    scope(failure) { renderer.close(); }
+
+    // Load the font.
+    import std.file: thisExePath;
+    import std.path: buildPath, dirName;
+    font = new SDLFont(sdlttf, thisExePath.dirName.buildPath(&quot;DroidSans.ttf&quot;), 20);
+    scope(failure) { font.close(); }
+}
+
+~this()
+{
+    font.close();
+    renderer.close();
+    window.close();
+    sdlttf.close();
+    sdl2.close();
+}
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="gameplatform-explanation">
+<h2>GamePlatform (explanation)</h2>
+<ul class="simple">
+<li><strong>Ⓓ</strong> We <tt class="docutils literal"><span class="pre">&#64;disable</span> <span class="pre">this()</span></tt> (default struct constructor)</li>
+<li><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">this()</span></tt> initializes what we need</li>
+<li><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">~this()</span></tt>: <em>destructor</em> called when <tt class="docutils literal"><span class="pre">GamePlatform</span></tt> exits scope</li>
+<li><strong>Ⓓ</strong> If anything fails (throws), <tt class="docutils literal"><span class="pre">scope(failure)</span></tt> blocks will clean up</li>
+<li><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">import</span> <span class="pre">std.file:</span> <span class="pre">thisExePath</span></tt>: Local import<ul>
+<li>Good for keeping track of what is used <em>where</em></li>
+<li>Code can be copy-pasting without checking imports</li>
+</ul>
+</li>
+<li>Questions?</li>
+</ul>
+
+</article>
+<article class="slide level-1" id="back-to-main">
+<h1>Back to <tt class="docutils literal"><span class="pre">main()</span></tt></h1>
+<ul class="simple">
+<li>Using <tt class="docutils literal"><span class="pre">GamePlatform</span></tt></li>
+<li>Main loop</li>
+<li>FPS counting (needed to get an idea of how fast/slow this is)</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="using-gameplatform-copy">
+<h2>Using <tt class="docutils literal"><span class="pre">GamePlatform</span></tt> (copy)</h2>
+<p>Copy into <tt class="docutils literal"><span class="pre">main()</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">auto</span> <span class="n">log</span> <span class="p">=</span> <span class="k">new</span> <span class="n">FileLogger</span><span class="p">(</span><span class="s">&quot;asteroids-log.txt&quot;</span><span class="p">,</span> <span class="s">&quot;Asteroids log&quot;</span><span class="p">);</span>
+
+<span class="c1">// Note: Many of the SDL init functions may fail and throw exceptions. In a real game,</span>
+<span class="c1">// this should be handled (e.g. a fallback renderer if accelerated doesn&#39;t work).</span>
+<span class="k">auto</span> <span class="n">platform</span> <span class="p">=</span> <span class="n">GamePlatform</span><span class="p">(</span><span class="n">log</span><span class="p">);</span>
+
+<span class="n">mainLoop</span><span class="p">:</span> <span class="k">while</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">SDL_Event</span> <span class="n">event</span><span class="p">;</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">SDL_PollEvent</span><span class="p">(&amp;</span><span class="n">event</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="n">type</span> <span class="p">==</span> <span class="n">SDL_QUIT</span><span class="p">)</span> <span class="p">{</span> <span class="k">break</span> <span class="n">mainLoop</span><span class="p">;</span> <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Fill the entire screen with black (background) color.</span>
+    <span class="n">platform</span><span class="p">.</span><span class="n">renderer</span><span class="p">.</span><span class="n">setColor</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">platform</span><span class="p">.</span><span class="n">renderer</span><span class="p">.</span><span class="n">clear</span><span class="p">();</span>
+
+    <span class="c1">// Show the drawn result on the screen (swap front/back buffers)</span>
+    <span class="n">platform</span><span class="p">.</span><span class="n">renderer</span><span class="p">.</span><span class="n">present</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="using-gameplatform-explanation">
+<h2>Using <tt class="docutils literal"><span class="pre">GamePlatform</span></tt> (explanation)</h2>
+<ul class="simple">
+<li><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">auto</span></tt> means the type is automatically deduced (<strong>not</strong> dynamic)<ul>
+<li>e.g. <tt class="docutils literal"><span class="pre">auto</span></tt> is replaced by <tt class="docutils literal"><span class="pre">FileLogger</span></tt> during compilation</li>
+</ul>
+</li>
+<li><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">new</span></tt> is used for GC allocs - <tt class="docutils literal"><span class="pre">GamePlatform</span></tt> is constructed without GC</li>
+<li>We <em>poll</em> SDL events to find out what happened last frame<ul>
+<li><tt class="docutils literal"><span class="pre">SDL_QUIT</span></tt> - e.g. when the window is closed</li>
+<li><strong>Ⓓ</strong> We label the outer loop <tt class="docutils literal"><span class="pre">mainLoop</span></tt> to break from the inner loop</li>
+</ul>
+</li>
+<li>Try <tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt> and <tt class="docutils literal"><span class="pre">./asteroids</span></tt> to see if it works<ul>
+<li>You should see a black window</li>
+</ul>
+</li>
+</ul>
+<p><a class="reference external" href="http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-1-window.tar.gz">[Checkpoint 1 - blank window]</a></p>
+
+</article>
+<article class="slide level-2" id="fps-counting-copy">
+<h2>FPS counting (copy)</h2>
+<p>Before the <tt class="docutils literal"><span class="pre">while(true)</span></tt> loop in <tt class="docutils literal"><span class="pre">main()</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">datetime</span><span class="p">:</span> <span class="n">Clock</span><span class="p">;</span>
+<span class="c1">// Last time we checked FPS (hectonanoseconds)</span>
+<span class="kt">ulong</span> <span class="n">prevFPSTime</span> <span class="p">=</span> <span class="n">Clock</span><span class="p">.</span><span class="n">currStdTime</span><span class="p">();</span>
+<span class="c1">// Number of frames since last FPS update</span>
+<span class="kt">uint</span> <span class="n">frames</span> <span class="p">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>At the beginning of the <tt class="docutils literal"><span class="pre">while(true)</span></tt> loop:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">const</span> <span class="n">currTime</span> <span class="p">=</span> <span class="n">Clock</span><span class="p">.</span><span class="n">currStdTime</span><span class="p">();</span>
+
+<span class="p">++</span><span class="n">frames</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="n">timeSinceFPS</span> <span class="p">=</span> <span class="n">currTime</span> <span class="p">-</span> <span class="n">prevFPSTime</span><span class="p">;</span>
+<span class="c1">// Update FPS every 0.1 seconds/1000000 hectonanoseconds</span>
+<span class="k">if</span><span class="p">(</span><span class="n">timeSinceFPS</span> <span class="p">&gt;</span> <span class="mi">1_000_000</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">const</span> <span class="n">fps</span> <span class="p">=</span> <span class="n">frames</span> <span class="p">/</span> <span class="p">(</span><span class="n">timeSinceFPS</span> <span class="p">/</span> <span class="mf">10_000_000.0</span><span class="p">);</span>
+    <span class="n">platform</span><span class="p">.</span><span class="n">window</span><span class="p">.</span><span class="n">setTitle</span><span class="p">(</span><span class="s">&quot;Asteroids: %.2f FPS&quot;</span><span class="p">.</span><span class="n">format</span><span class="p">(</span><span class="n">fps</span><span class="p">));</span>
+    <span class="n">frames</span> <span class="p">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">prevFPSTime</span> <span class="p">=</span> <span class="n">currTime</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="fps-counting-explanation">
+<h2>FPS counting (explanation)</h2>
+<ul class="simple">
+<li>Remember time of previous FPS update</li>
+<li>Get hecto-nanosecond time with <a class="reference external" href="http://dlang.org/phobos/std_datetime.html#.Clock.currStdTime">std.datetime.Clock.currStdTime()</a></li>
+<li>Count frames since previous FPS update</li>
+<li>If more than 0.1 seconds passes, update FPS in the window title<ul>
+<li>Using <a class="reference external" href="http://dlang.org/phobos/std_string.html#.format">std.string.format()</a></li>
+</ul>
+</li>
+<li>Again, try <tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt> and <tt class="docutils literal"><span class="pre">./asteroids</span></tt></li>
+<li><strong>Ⓓ</strong> note that <tt class="docutils literal"><span class="pre">const</span></tt> can be used similarly to <tt class="docutils literal"><span class="pre">auto</span></tt></li>
+<li>To test: <tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt> and <tt class="docutils literal"><span class="pre">./asteroids</span></tt><ul>
+<li>You should see a black window with FPS count at the top</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-1" id="entity">
+<h1>Entity</h1>
+<ul class="simple">
+<li>Basic game entity</li>
+<li>Basic game state</li>
+<li>Actually drawing something</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="basic-game-entity-copy">
+<h2>Basic game entity (copy)</h2>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">struct</span> <span class="n">Entity</span>
+<span class="p">{</span>
+    <span class="k">enum</span> <span class="n">Type</span><span class="p">:</span> <span class="kt">ubyte</span>
+    <span class="p">{</span>
+        <span class="n">Player</span><span class="p">,</span>
+        <span class="n">Projectile</span><span class="p">,</span>
+        <span class="n">AsteroidBig</span><span class="p">,</span> <span class="n">AsteroidMed</span><span class="p">,</span> <span class="n">AsteroidSmall</span>
+    <span class="p">}</span>
+
+    <span class="k">static</span> <span class="n">immutable</span> <span class="n">typeRadius</span> <span class="p">=</span> <span class="p">[</span><span class="mf">10.0f</span><span class="p">,</span> <span class="mf">3.0f</span><span class="p">,</span> <span class="mf">20.0f</span><span class="p">,</span> <span class="mf">13.0f</span><span class="p">,</span> <span class="mf">8.0f</span><span class="p">];</span>
+
+    <span class="c1">// Entity type (player, asteroid, etc.)</span>
+    <span class="n">Type</span> <span class="n">type</span><span class="p">;</span>
+    <span class="c1">// 2D (float) position of the entity.</span>
+    <span class="n">vec2f</span> <span class="n">pos</span><span class="p">;</span>
+    <span class="c1">// Speed of the entity (X and Y) in units per second.</span>
+    <span class="n">vec2f</span> <span class="n">speed</span> <span class="p">=</span> <span class="n">vec2f</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span> <span class="mf">0.0f</span><span class="p">);</span>
+    <span class="c1">// Rotation of the entity.</span>
+    <span class="kt">float</span> <span class="n">rotRadians</span> <span class="p">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+
+    <span class="c1">// Acceleration in units per second ** 2 (used by player)</span>
+    <span class="kt">float</span> <span class="n">acceleration</span> <span class="p">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+    <span class="c1">// Turn speed in radians per second (used by player)</span>
+    <span class="kt">float</span> <span class="n">turnSpeed</span>  <span class="p">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+
+    <span class="kt">float</span> <span class="n">radius</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">typeRadius</span><span class="p">[</span><span class="n">type</span><span class="p">];</span> <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="basic-game-entity-explanation">
+<h2>Basic game entity (explanation)</h2>
+<ul>
+<li><p class="first">An entity is a game object (player, projectile, asteroid)</p>
+</li>
+<li><p class="first">A dumb struct with no real OOP will suffice for now</p>
+<ul class="simple">
+<li>For <em>real</em> games, entity-component systems (ECS) &gt; OOP</li>
+</ul>
+</li>
+<li><p class="first">We have what we need for simple rendering and movement</p>
+<p>... and <tt class="docutils literal"><span class="pre">acceleration</span></tt>/<tt class="docutils literal"><span class="pre">turnSpeed</span></tt>, to be used by player ship</p>
+</li>
+<li><p class="first"><strong>Ⓓ</strong> Entity type is an <tt class="docutils literal"><span class="pre">enum</span></tt>; like C++11 <tt class="docutils literal"><span class="pre">enum</span></tt></p>
+</li>
+<li><p class="first"><strong>Ⓓ</strong> We use function <tt class="docutils literal"><span class="pre">radius</span></tt> as a property:</p>
+<p><tt class="docutils literal"><span class="pre">someEntity.radius</span></tt> translates to <tt class="docutils literal"><span class="pre">Entity.typeRadius[someEntity.type]</span></tt></p>
+<ul class="simple">
+<li>All entities of the same type have the same radius</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="basic-game-state-copy">
+<h2>Basic game state (copy)</h2>
+<div class="highlight-d"><div class="highlight"><pre><span class="n">Entity</span> <span class="n">createPlayer</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="c1">// Any number of struct members may be set directly at initialization without a constructor.</span>
+    <span class="k">auto</span> <span class="n">result</span> <span class="p">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">Entity</span><span class="p">.</span><span class="n">Type</span><span class="p">.</span><span class="n">Player</span><span class="p">,</span> <span class="n">vec2f</span><span class="p">(</span><span class="mf">0.5f</span><span class="p">,</span> <span class="mf">0.5f</span><span class="p">)</span> <span class="p">*</span> <span class="n">gameAreaF</span><span class="p">);</span>
+    <span class="c1">// Can&#39;t set these at initialization without setting all preceding members.</span>
+    <span class="n">result</span><span class="p">.</span><span class="n">acceleration</span> <span class="p">=</span> <span class="mf">150.0f</span><span class="p">;</span>
+    <span class="n">result</span><span class="p">.</span><span class="n">turnSpeed</span>    <span class="p">=</span> <span class="mf">3.5f</span><span class="p">;</span>
+    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Class, GC allocated, without RAII (by default) - like Java/C# classes</span>
+<span class="k">class</span> <span class="n">GameState</span>
+<span class="p">{</span>
+<span class="k">private</span><span class="p">:</span>
+    <span class="c1">// Index of the player entity in objects.</span>
+    <span class="n">size_t</span> <span class="n">playerIndex</span><span class="p">;</span>
+
+<span class="k">public</span><span class="p">:</span>
+    <span class="n">Entity</span><span class="p">[]</span> <span class="n">objects</span><span class="p">;</span>
+
+    <span class="kt">float</span> <span class="n">frameTimeSecs</span> <span class="p">=</span> <span class="mf">0.0f</span><span class="p">;</span>
+
+    <span class="k">this</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="n">objects</span> <span class="p">=</span> <span class="p">[</span><span class="n">createPlayer</span><span class="p">()];</span>
+        <span class="n">playerIndex</span> <span class="p">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="c1">// Reserve to avoid (GC) reallocations</span>
+        <span class="n">objects</span><span class="p">.</span><span class="n">reserve</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">ref</span> <span class="n">Entity</span> <span class="n">player</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="n">objects</span><span class="p">[</span><span class="n">playerIndex</span><span class="p">];</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="basic-game-state-explanation">
+<h2>Basic game state (explanation)</h2>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">createPlayer()</span></tt> creates a player ship in the middle of the game area</li>
+<li><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">GameState</span></tt> is a <tt class="docutils literal"><span class="pre">class</span></tt> similar to classes in Java/C#, not C++<ul>
+<li>GC-allocated by default and destructor shouldn't be relied on</li>
+<li><strong>Ⓓ</strong> Entities stored in the <tt class="docutils literal"><span class="pre">objects</span></tt> array; <tt class="docutils literal"><span class="pre">reserve()</span></tt> avoids allocs</li>
+<li><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">player()</span></tt> is a <em>property</em> to access the player entity (by <tt class="docutils literal"><span class="pre">ref</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">frameTimeSecs</span></tt> is time spent running the previous frame (next slide)</li>
+<li>(use of <tt class="docutils literal"><span class="pre">private</span></tt>/<tt class="docutils literal"><span class="pre">public</span></tt> is not kosher OOP to reduce code size)</li>
+</ul>
+</li>
+<li><strong>Ⓓ</strong> note: <tt class="docutils literal"><span class="pre">private</span></tt> applies to <em>module</em> in D, not <em>class</em></li>
+</ul>
+
+</article>
+<article class="slide level-2" id="gamestate-and-frame-time-copy">
+<h2>GameState and frame time (copy)</h2>
+<p>Add into <tt class="docutils literal"><span class="pre">main()</span></tt> before <tt class="docutils literal"><span class="pre">while(true)</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// Time when the last frame started (in hectonanoseconds, or 10ths of a microsecond)</span>
+<span class="kt">ulong</span> <span class="n">prevTime</span> <span class="p">=</span> <span class="n">prevFPSTime</span><span class="p">;</span>
+<span class="k">auto</span> <span class="n">game</span> <span class="p">=</span> <span class="k">new</span> <span class="n">GameState</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>And into the <tt class="docutils literal"><span class="pre">while</span></tt> loop before <tt class="docutils literal"><span class="pre">if(timeSinceFPS</span> <span class="pre">&gt;</span> <span class="pre">1_000_000)</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="n">game</span><span class="p">.</span><span class="n">frameTimeSecs</span>  <span class="p">=</span> <span class="p">(</span><span class="n">currTime</span> <span class="p">-</span> <span class="n">prevTime</span><span class="p">)</span> <span class="p">/</span> <span class="mf">10_000_000.0</span><span class="p">;</span>
+<span class="n">prevTime</span> <span class="p">=</span> <span class="n">currTime</span><span class="p">;</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="gamestate-and-frame-time-explanation">
+<h2>GameState and frame time (explanation)</h2>
+<ul class="simple">
+<li>We initialize <tt class="docutils literal"><span class="pre">GameState</span></tt> before the main loop</li>
+<li>We need to keep track of how long the last frame took<ul>
+<li>Otherwise game speed would depend on framerate</li>
+<li><tt class="docutils literal"><span class="pre">frameTimeSecs</span></tt> is a <tt class="docutils literal"><span class="pre">float</span></tt> representing <em>seconds</em><ul>
+<li>Allowing us to represent speeds as <em>units per second</em><ul>
+<li><tt class="docutils literal"><span class="pre">speed</span> <span class="pre">*</span> <span class="pre">frameTimeSecs</span> <span class="pre">=</span> <span class="pre">movement_for_this_frame</span></tt></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="basic-entity-rendering-copy">
+<h2>Basic entity rendering (copy)</h2>
+<div class="highlight-d"><div class="highlight"><pre><span class="kt">void</span> <span class="n">renderObject</span><span class="p">(</span><span class="n">SDL2Renderer</span> <span class="n">renderer</span><span class="p">,</span> <span class="n">Entity</span><span class="p">.</span><span class="n">Type</span> <span class="n">type</span><span class="p">,</span> <span class="n">vec2f</span> <span class="n">pos</span><span class="p">,</span> <span class="kt">float</span> <span class="n">rot</span><span class="p">,</span> <span class="kt">float</span> <span class="n">radius</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">enum</span> <span class="n">h</span> <span class="p">=</span> <span class="mf">1.0f</span><span class="p">;</span>
+    <span class="k">static</span> <span class="n">vec2f</span><span class="p">[]</span> <span class="n">vertices</span> <span class="p">=</span> <span class="p">[</span><span class="n">vec2f</span><span class="p">(-</span><span class="n">h</span><span class="p">,</span> <span class="p">-</span><span class="n">h</span><span class="p">),</span> <span class="n">vec2f</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="p">-</span><span class="n">h</span><span class="p">),</span>
+                               <span class="n">vec2f</span><span class="p">(</span><span class="n">h</span><span class="p">,</span>  <span class="p">-</span><span class="n">h</span><span class="p">),</span> <span class="n">vec2f</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span>
+                               <span class="n">vec2f</span><span class="p">(</span><span class="n">h</span><span class="p">,</span>  <span class="n">h</span><span class="p">),</span>  <span class="n">vec2f</span><span class="p">(-</span><span class="n">h</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span>
+                               <span class="n">vec2f</span><span class="p">(-</span><span class="n">h</span><span class="p">,</span> <span class="n">h</span><span class="p">),</span>  <span class="n">vec2f</span><span class="p">(-</span><span class="n">h</span><span class="p">,</span> <span class="p">-</span><span class="n">h</span><span class="p">)];</span>
+
+    <span class="c1">// Matrix to rotate vertices</span>
+    <span class="k">const</span> <span class="n">rotation</span> <span class="p">=</span> <span class="n">mat3f</span><span class="p">.</span><span class="n">rotateZ</span><span class="p">(</span><span class="n">rot</span><span class="p">);</span>
+    <span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">range</span><span class="p">:</span> <span class="n">chunks</span><span class="p">;</span>
+    <span class="c1">// Iterate by pairs of points (start/end points of each line).</span>
+    <span class="k">foreach</span><span class="p">(</span><span class="n">line</span><span class="p">;</span> <span class="n">vertices</span><span class="p">.</span><span class="n">chunks</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="c1">// First scale vertices by radius, then rotate them, and then move (translate)</span>
+        <span class="c1">// them into position. Rotation needs a 3D vector, so we add a 0 and later</span>
+        <span class="c1">// discard the 3rd coordinate (only using X,Y).</span>
+        <span class="k">const</span> <span class="n">s</span> <span class="p">=</span> <span class="n">pos</span> <span class="p">+</span> <span class="p">(</span><span class="n">rotation</span> <span class="p">*</span> <span class="n">vec3f</span><span class="p">(</span><span class="n">radius</span> <span class="p">*</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">)).</span><span class="n">xy</span><span class="p">;</span>
+        <span class="k">const</span> <span class="n">e</span> <span class="p">=</span> <span class="n">pos</span> <span class="p">+</span> <span class="p">(</span><span class="n">rotation</span> <span class="p">*</span> <span class="n">vec3f</span><span class="p">(</span><span class="n">radius</span> <span class="p">*</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">)).</span><span class="n">xy</span><span class="p">;</span>
+        <span class="c1">// SDL renderer requires integer coords</span>
+        <span class="n">renderer</span><span class="p">.</span><span class="n">drawLine</span><span class="p">(</span><span class="k">cast</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">s</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">s</span><span class="p">.</span><span class="n">y</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">e</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="k">cast</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">e</span><span class="p">.</span><span class="n">y</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">entityRendering</span><span class="p">(</span><span class="n">Entity</span><span class="p">[]</span> <span class="n">objects</span><span class="p">,</span> <span class="n">SDL2Renderer</span> <span class="n">renderer</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">foreach</span><span class="p">(</span><span class="k">ref</span> <span class="n">object</span><span class="p">;</span> <span class="n">objects</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// renderObject() used with UFCS as an external method of Renderer</span>
+        <span class="n">renderer</span><span class="p">.</span><span class="n">renderObject</span><span class="p">(</span><span class="n">object</span><span class="p">.</span><span class="n">type</span><span class="p">,</span> <span class="n">object</span><span class="p">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">object</span><span class="p">.</span><span class="n">rotRadians</span><span class="p">,</span> <span class="n">object</span><span class="p">.</span><span class="n">radius</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="basic-entity-rendering-explanation">
+<h2>Basic entity rendering (explanation)</h2>
+<ul>
+<li><p class="first">For now, we only render squares (4 lines)</p>
+</li>
+<li><p class="first"><strong>Ⓓ</strong> we use <a class="reference external" href="http://dlang.org/phobos/std_range.html#.Chunks">std.range.chunks</a> to iterate by pairs of vertices</p>
+<ul>
+<li><p class="first">Each pair represents a line</p>
+</li>
+<li><p class="first">Before drawing, vertices are:</p>
+<p><em>scaled</em> by radius, <em>rotated</em> by a matrix, then <em>translated</em> by <tt class="docutils literal"><span class="pre">pos</span></tt></p>
+</li>
+<li><p class="first">We discard <strong>z</strong> of a 3D vector by using <tt class="docutils literal"><span class="pre">.xy</span></tt></p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">.yx</span></tt> would work too, as well as <tt class="docutils literal"><span class="pre">.xyxz</span></tt></li>
+<li><strong>Ⓓ</strong> Code is <em>generated</em> based on what follows the <tt class="docutils literal"><span class="pre">.</span></tt> (<tt class="docutils literal"><span class="pre">opDispatch()</span></tt>)</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">renderObject</span></tt> can be used as an external method of <tt class="docutils literal"><span class="pre">SDL2Renderer</span></tt></p>
+<p><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">renderer.renderObject(...)</span></tt> is same as <tt class="docutils literal"><span class="pre">renderObject(renderer,</span> <span class="pre">...)</span></tt></p>
+<ul class="simple">
+<li>This is called UFCS (uniform function call syntax)</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="using-entityrendering-copy-explanation">
+<h2>Using <tt class="docutils literal"><span class="pre">entityRendering()</span></tt> (copy/explanation)</h2>
+<p>Copy into the <tt class="docutils literal"><span class="pre">while()</span></tt> loop in <tt class="docutils literal"><span class="pre">main()</span></tt>, after <tt class="docutils literal"><span class="pre">platform.renderer.clear()</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// Following draws will be white.</span>
+<span class="n">platform</span><span class="p">.</span><span class="n">renderer</span><span class="p">.</span><span class="n">setColor</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">);</span>
+<span class="n">entityRendering</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">objects</span><span class="p">,</span> <span class="n">platform</span><span class="p">.</span><span class="n">renderer</span><span class="p">);</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>We set color to draw (lines) with, and call <tt class="docutils literal"><span class="pre">entityRendering()</span></tt></li>
+<li>Test (<tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt>, then <tt class="docutils literal"><span class="pre">./asteroids</span></tt>)<ul>
+<li>You should see a stationary white square (the player ship)</li>
+</ul>
+</li>
+</ul>
+<p><a class="reference external" href="http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-2-rendering.tar.gz">[Checkpoint 2 - rendering]</a></p>
+
+</article>
+<article class="slide level-1" id="movement-and-input">
+<h1>Movement and input</h1>
+<ul class="simple">
+<li>Movement logic</li>
+<li>Input to control the player ship</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="movement-copy">
+<h2>Movement (copy)</h2>
+<div class="highlight-d"><div class="highlight"><pre><span class="kt">void</span> <span class="n">entityMovement</span><span class="p">(</span><span class="n">Entity</span><span class="p">[]</span> <span class="n">objects</span><span class="p">,</span> <span class="kt">float</span> <span class="n">frameTime</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">foreach</span><span class="p">(</span><span class="k">ref</span> <span class="n">object</span><span class="p">;</span> <span class="n">objects</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// Need to multiply by frameTime to determine how much to move the object.</span>
+        <span class="n">object</span><span class="p">.</span><span class="n">pos</span> <span class="p">+=</span> <span class="n">frameTime</span> <span class="p">*</span> <span class="n">object</span><span class="p">.</span><span class="n">speed</span><span class="p">;</span>
+        <span class="c1">// Wrap the positions around (object that leaves the right edge enters the left endge)</span>
+        <span class="c1">// fmod() is compatible with C fmod(), i.e. not really modulo for negative numbers.</span>
+        <span class="k">auto</span> <span class="n">modulo</span> <span class="p">=</span> <span class="p">(</span><span class="kt">float</span> <span class="n">a</span><span class="p">,</span> <span class="kt">float</span> <span class="n">b</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">a</span> <span class="p">&gt;=</span> <span class="mi">0</span> <span class="p">?</span> <span class="n">fmod</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="p">:</span> <span class="n">fmod</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">)</span> <span class="p">+</span> <span class="n">b</span><span class="p">;</span>
+        <span class="n">object</span><span class="p">.</span><span class="n">pos</span><span class="p">.</span><span class="n">x</span> <span class="p">=</span> <span class="n">modulo</span><span class="p">(</span><span class="n">object</span><span class="p">.</span><span class="n">pos</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="n">gameAreaF</span><span class="p">.</span><span class="n">x</span><span class="p">);</span>
+        <span class="n">object</span><span class="p">.</span><span class="n">pos</span><span class="p">.</span><span class="n">y</span> <span class="p">=</span> <span class="n">modulo</span><span class="p">(</span><span class="n">object</span><span class="p">.</span><span class="n">pos</span><span class="p">.</span><span class="n">y</span><span class="p">,</span> <span class="n">gameAreaF</span><span class="p">.</span><span class="n">y</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="movement-explanation">
+<h2>Movement (explanation)</h2>
+<ul class="simple">
+<li><strong>Nothing is going to move yet</strong><ul>
+<li>We have no controls yet</li>
+</ul>
+</li>
+<li>Movement logic:<ul>
+<li>Apply object speed (X, Y) multiplied by frame time to its position</li>
+<li>Use modulo to <em>wrap</em> the screen around<ul>
+<li>Objects leaving left screen edge will enter at right edge, etc.</li>
+</ul>
+</li>
+<li><strong>Ⓓ</strong> a lambda function is used <tt class="docutils literal"><span class="pre">(args)</span> <span class="pre">=&gt;</span> <span class="pre">result</span></tt></li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="controls-code">
+<h2>Controls (code)</h2>
+<div class="highlight-d"><div class="highlight"><pre><span class="n">vec2f</span> <span class="n">directionVector</span><span class="p">(</span><span class="kt">float</span> <span class="n">radians</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// Rotates an up vector around Z in 3D, and returns the X/Y coords of that.</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">mat3f</span><span class="p">.</span><span class="n">rotateZ</span><span class="p">(</span><span class="n">radians</span><span class="p">)</span> <span class="p">*</span> <span class="n">vec3f</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span> <span class="p">-</span><span class="mf">1.0f</span><span class="p">,</span> <span class="mf">0.0f</span><span class="p">)).</span><span class="n">xy</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">bool</span> <span class="n">handleInput</span><span class="p">(</span><span class="k">ref</span> <span class="n">GameState</span> <span class="n">game</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">SDL_Event</span> <span class="n">event</span><span class="p">;</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">SDL_PollEvent</span><span class="p">(&amp;</span><span class="n">event</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="n">type</span> <span class="p">==</span> <span class="n">SDL_QUIT</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="kc">false</span><span class="p">;</span> <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="kt">int</span> <span class="n">keysLen</span><span class="p">;</span>
+    <span class="c1">// C API function, returns a pointer.</span>
+    <span class="k">const</span> <span class="kt">ubyte</span><span class="p">*</span> <span class="n">keysPtr</span> <span class="p">=</span> <span class="n">SDL_GetKeyboardState</span><span class="p">(&amp;</span><span class="n">keysLen</span><span class="p">);</span>
+    <span class="c1">// Bounded slice for safety</span>
+    <span class="k">const</span> <span class="n">keys</span> <span class="p">=</span> <span class="n">keysPtr</span><span class="p">[</span><span class="mi">0</span> <span class="p">..</span> <span class="n">keysLen</span><span class="p">];</span>
+
+    <span class="c1">// Player ship controls.</span>
+    <span class="k">with</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">player</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">keys</span><span class="p">[</span><span class="n">SDL_SCANCODE_UP</span><span class="p">])</span>
+        <span class="p">{</span>
+            <span class="n">speed</span> <span class="p">+=</span> <span class="n">game</span><span class="p">.</span><span class="n">frameTimeSecs</span> <span class="p">*</span> <span class="n">acceleration</span> <span class="p">*</span> <span class="n">rotRadians</span><span class="p">.</span><span class="n">directionVector</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">keys</span><span class="p">[</span><span class="n">SDL_SCANCODE_LEFT</span><span class="p">])</span>  <span class="p">{</span> <span class="n">rotRadians</span> <span class="p">-=</span> <span class="n">game</span><span class="p">.</span><span class="n">frameTimeSecs</span> <span class="p">*</span> <span class="n">turnSpeed</span><span class="p">;</span> <span class="p">}</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">keys</span><span class="p">[</span><span class="n">SDL_SCANCODE_RIGHT</span><span class="p">])</span> <span class="p">{</span> <span class="n">rotRadians</span> <span class="p">+=</span> <span class="n">game</span><span class="p">.</span><span class="n">frameTimeSecs</span> <span class="p">*</span> <span class="n">turnSpeed</span><span class="p">;</span> <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="controls-explanation">
+<h2>Controls (explanation)</h2>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">directionVector()</span></tt> returns unit (length 1) vector rotated in a direction<ul>
+<li>Can be multiplied to get a vector of any length in desired direction</li>
+</ul>
+</li>
+<li>We get a <em>slice</em> of all keys and check if arrow keys are pressed<ul>
+<li><tt class="docutils literal"><span class="pre">↑</span></tt> is used to accelerate the ship, <tt class="docutils literal"><span class="pre">←</span></tt>/<tt class="docutils literal"><span class="pre">→</span></tt> to rotate it</li>
+<li><strong>Ⓓ</strong> we use <tt class="docutils literal"><span class="pre">with(game.player)</span></tt> to avoid typing too much<ul>
+<li>e.g. <tt class="docutils literal"><span class="pre">acceleration</span></tt> instead of <tt class="docutils literal"><span class="pre">game.player.acceleration</span></tt></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="using-entitymovement-and-handleinput">
+<h2>Using <tt class="docutils literal"><span class="pre">entityMovement</span></tt> and <tt class="docutils literal"><span class="pre">handleInput</span></tt></h2>
+<p>Copy into <tt class="docutils literal"><span class="pre">main()</span></tt>,  replacing the <tt class="docutils literal"><span class="pre">while(SDL_PollEvent(&amp;event))</span></tt> loop:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="n">entityMovement</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">objects</span><span class="p">,</span> <span class="n">game</span><span class="p">.</span><span class="n">frameTimeSecs</span><span class="p">);</span>
+
+<span class="k">if</span><span class="p">(!</span><span class="n">handleInput</span><span class="p">(</span><span class="n">game</span><span class="p">))</span>
+<span class="p">{</span>
+    <span class="k">break</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>Test (<tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt>, then <tt class="docutils literal"><span class="pre">./asteroids</span></tt>)<ul>
+<li>You should be able to move around the &quot;ship&quot; with arrow keys</li>
+</ul>
+</li>
+</ul>
+<p><a class="reference external" href="http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-3-movement.tar.gz">[Checkpoint 3 - movement and controls]</a></p>
+
+</article>
+<article class="slide level-1" id="asteroids">
+<h1>Asteroids</h1>
+<ul class="simple">
+<li>Asteroids</li>
+<li>Collisions</li>
+<li>Lives &amp; Dying</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="some-asteroids-code">
+<h2>Some asteroids (code)</h2>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">import</span> <span class="n">std</span><span class="p">.</span><span class="n">random</span><span class="p">:</span> <span class="n">uniform</span><span class="p">,</span> <span class="n">uniform01</span><span class="p">;</span>
+<span class="n">Entity</span> <span class="n">createAsteroid</span><span class="p">(</span><span class="n">Entity</span><span class="p">[]</span> <span class="n">objects</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">auto</span> <span class="n">result</span> <span class="p">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">Entity</span><span class="p">.</span><span class="n">Type</span><span class="p">.</span><span class="n">AsteroidBig</span><span class="p">);</span>
+    <span class="n">result</span><span class="p">.</span><span class="n">rotRadians</span> <span class="p">=</span> <span class="n">uniform</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span> <span class="mi">2</span> <span class="p">*</span> <span class="n">PI</span><span class="p">);</span>
+    <span class="n">result</span><span class="p">.</span><span class="n">speed</span> <span class="p">=</span> <span class="n">result</span><span class="p">.</span><span class="n">rotRadians</span><span class="p">.</span><span class="n">directionVector</span> <span class="p">*</span> <span class="n">uniform</span><span class="p">(</span><span class="mf">30.0f</span><span class="p">,</span> <span class="mf">90.0f</span><span class="p">);</span>
+    <span class="c1">// Try to create an asteroid that doesn&#39;t collide with anything, give up after</span>
+    <span class="c1">// 10 attempts if we can&#39;t so we don&#39;t loop infinitely if the game area is full.</span>
+    <span class="k">foreach</span><span class="p">(</span><span class="n">attempt</span><span class="p">;</span> <span class="mi">0</span> <span class="p">..</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">result</span><span class="p">.</span><span class="n">pos</span> <span class="p">=</span> <span class="n">vec2f</span><span class="p">(</span><span class="n">uniform01</span><span class="p">(),</span> <span class="n">uniform01</span><span class="p">())</span> <span class="p">*</span> <span class="n">gameAreaF</span><span class="p">;</span>
+        <span class="c1">// If we can&#39;t find any object that collides with result, we have a good position.</span>
+        <span class="k">if</span><span class="p">(!</span><span class="n">objects</span><span class="p">.</span><span class="n">canFind</span><span class="p">!((</span><span class="k">ref</span> <span class="n">o</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">pos</span> <span class="p">-</span> <span class="n">o</span><span class="p">.</span><span class="n">pos</span><span class="p">).</span><span class="n">length</span> <span class="p">&lt;</span> <span class="n">result</span><span class="p">.</span><span class="n">radius</span> <span class="p">+</span> <span class="n">o</span><span class="p">.</span><span class="n">radius</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>And in <tt class="docutils literal"><span class="pre">main()</span></tt>, before the <tt class="docutils literal"><span class="pre">entityMovement()</span></tt> call:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// Shortcut for less typing</span>
+<span class="k">alias</span> <span class="n">T</span> <span class="p">=</span> <span class="n">Entity</span><span class="p">.</span><span class="n">Type</span><span class="p">;</span>
+<span class="c1">// This is pretty inefficient (recounting asteroids every frame).</span>
+<span class="k">enum</span> <span class="n">asteroidTypes</span> <span class="p">=</span> <span class="p">[</span><span class="n">T</span><span class="p">.</span><span class="n">AsteroidBig</span><span class="p">,</span> <span class="n">T</span><span class="p">.</span><span class="n">AsteroidMed</span><span class="p">,</span> <span class="n">T</span><span class="p">.</span><span class="n">AsteroidSmall</span><span class="p">];</span>
+<span class="k">const</span> <span class="n">asteroidCount</span> <span class="p">=</span> <span class="n">game</span><span class="p">.</span><span class="n">objects</span><span class="p">.</span><span class="n">count</span><span class="p">!((</span><span class="k">ref</span> <span class="n">o</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">asteroidTypes</span><span class="p">.</span><span class="n">canFind</span><span class="p">(</span><span class="n">o</span><span class="p">.</span><span class="n">type</span><span class="p">));</span>
+
+<span class="c1">// If there are no asteroids, start a new round by spawning some more.</span>
+<span class="k">if</span><span class="p">(</span><span class="n">asteroidCount</span> <span class="p">==</span> <span class="mi">0</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">foreach</span><span class="p">(</span><span class="n">spawn</span><span class="p">;</span> <span class="mi">0</span> <span class="p">..</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">game</span><span class="p">.</span><span class="n">objects</span> <span class="p">~=</span> <span class="n">createAsteroid</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">objects</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="some-asteroids-explanation">
+<h2>Some asteroids (explanation)</h2>
+<ul>
+<li><p class="first">An asteroid is just another <tt class="docutils literal"><span class="pre">Entity</span></tt></p>
+</li>
+<li><p class="first"><strong>Ⓓ</strong> We use <a class="reference external" href="http://dlang.org/phobos/std_random.html#.uniform">std.random.uniform</a> for random rotation/position</p>
+</li>
+<li><p class="first">Up to 10 attempts to generate position (to avoid collision)</p>
+<ul>
+<li><p class="first"><strong>Ⓓ</strong> We use <a class="reference external" href="http://dlang.org/phobos/std_algorithm.html#.canFind">std.algorithm.canFind</a> with a <em>compile-time lambda arg</em></p>
+<p>Check if we <em>can find</em> an object colliding with generated asteroid;</p>
+<ul class="simple">
+<li>If we can't, we <tt class="docutils literal"><span class="pre">break</span></tt> out of the loop</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p class="first">In <tt class="docutils literal"><span class="pre">main()</span></tt> we add new asteroids if there are no asteroids.</p>
+<p>(this code will be expanded)</p>
+<ul class="simple">
+<li><strong>Ⓓ</strong> We use <a class="reference external" href="http://dlang.org/phobos/std_algorithm.html#.count">std.algorithm.count</a> to count the asteroids</li>
+</ul>
+</li>
+<li><p class="first">Test again (<tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt>, then <tt class="docutils literal"><span class="pre">./asteroids</span></tt>).</p>
+</li>
+<li><p class="first">You should see 'asteroids' as moving squares.</p>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="lives-code">
+<h2>Lives (code)</h2>
+<p>Into <tt class="docutils literal"><span class="pre">GameState</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">enum</span> <span class="n">Phase</span>
+<span class="p">{</span>
+    <span class="n">Playing</span><span class="p">,</span>
+    <span class="n">GameOver</span>
+<span class="p">}</span>
+
+<span class="n">Phase</span> <span class="n">phase</span> <span class="p">=</span> <span class="n">Phase</span><span class="p">.</span><span class="n">Playing</span><span class="p">;</span>
+
+<span class="kt">uint</span> <span class="n">lives</span> <span class="p">=</span> <span class="mi">3</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Into <tt class="docutils literal"><span class="pre">GameState.player()</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">assert</span><span class="p">(</span><span class="n">phase</span> <span class="p">==</span> <span class="n">Phase</span><span class="p">.</span><span class="n">Playing</span><span class="p">,</span> <span class="s">&quot;Can&#39;t access the player ship; game is over&quot;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>In <tt class="docutils literal"><span class="pre">handleInput</span></tt>, rewrite <tt class="docutils literal"><span class="pre">with(game.player)</span></tt> to:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">if</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">phase</span> <span class="p">==</span> <span class="n">GameState</span><span class="p">.</span><span class="n">Phase</span><span class="p">.</span><span class="n">Playing</span><span class="p">)</span> <span class="k">with</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">player</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Into <tt class="docutils literal"><span class="pre">main()</span></tt>, before <tt class="docutils literal"><span class="pre">platform.renderer.setColor(0,</span> <span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">0);</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// Game Over if the player has run out of lives.</span>
+<span class="k">if</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">lives</span> <span class="p">==</span> <span class="mi">0</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">game</span><span class="p">.</span><span class="n">phase</span> <span class="p">=</span> <span class="n">GameState</span><span class="p">.</span><span class="n">Phase</span><span class="p">.</span><span class="n">GameOver</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="lives-explanation">
+<h2>Lives (explanation)</h2>
+<ul class="simple">
+<li><strong>nothing is going to die yet</strong> - we have no code for collisions/dying</li>
+<li>We use an <tt class="docutils literal"><span class="pre">enum</span></tt> to specify which <em>phase</em> (state) the game is in.</li>
+<li>We have a limited number of lives (<tt class="docutils literal"><span class="pre">3</span></tt>)</li>
+<li>In the <tt class="docutils literal"><span class="pre">GameState.player</span></tt> property, we check the game is not over<ul>
+<li>We can't access the player ship when it's dead</li>
+</ul>
+</li>
+<li>We only check player input if the game is not over</li>
+<li>If the player runs out of lives, we move into the <tt class="docutils literal"><span class="pre">GameOver</span></tt> phase<ul>
+<li>This won't happen yet; again we have no dying</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="collisions-and-dying-copy">
+<h2>Collisions and Dying (copy)</h2>
+<p>Into <tt class="docutils literal"><span class="pre">Entity</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// Is the entity dead?</span>
+<span class="kt">bool</span> <span class="n">dead</span> <span class="p">=</span> <span class="kc">false</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>New functions:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="kt">void</span> <span class="n">entityCollisions</span><span class="p">(</span><span class="n">Entity</span><span class="p">[]</span> <span class="n">objects</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// This is a really stupid way of handling collisions (O(n**2))</span>
+    <span class="k">foreach</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="k">ref</span> <span class="n">o1</span><span class="p">;</span> <span class="n">objects</span><span class="p">)</span> <span class="k">foreach</span><span class="p">(</span><span class="k">ref</span> <span class="n">o2</span><span class="p">;</span> <span class="n">objects</span><span class="p">[</span><span class="n">i</span> <span class="p">+</span> <span class="mi">1</span> <span class="p">..</span> <span class="p">$])</span>
+    <span class="p">{</span>
+        <span class="k">if</span><span class="p">((</span><span class="n">o1</span><span class="p">.</span><span class="n">pos</span> <span class="p">-</span> <span class="n">o2</span><span class="p">.</span><span class="n">pos</span><span class="p">).</span><span class="n">squaredLength</span> <span class="p">&lt;</span> <span class="n">o1</span><span class="p">.</span><span class="n">radius</span> <span class="p">^^</span> <span class="mi">2</span> <span class="p">+</span> <span class="n">o2</span><span class="p">.</span><span class="n">radius</span> <span class="p">^^</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">o1</span><span class="p">.</span><span class="n">dead</span> <span class="p">=</span> <span class="n">o2</span><span class="p">.</span><span class="n">dead</span> <span class="p">=</span> <span class="kc">true</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">Entity</span><span class="p">[]</span> <span class="n">entityDeaths</span><span class="p">(</span><span class="n">Entity</span><span class="p">[]</span> <span class="n">objects</span><span class="p">,</span> <span class="k">ref</span> <span class="kt">uint</span> <span class="n">lives</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">foreach</span><span class="p">(</span><span class="k">ref</span> <span class="n">object</span><span class="p">;</span> <span class="n">objects</span><span class="p">.</span><span class="n">filter</span><span class="p">!((</span><span class="k">ref</span> <span class="n">o</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">o</span><span class="p">.</span><span class="n">dead</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">object</span><span class="p">.</span><span class="n">type</span> <span class="p">==</span> <span class="n">Entity</span><span class="p">.</span><span class="n">Type</span><span class="p">.</span><span class="n">Player</span> <span class="p">&amp;&amp;</span> <span class="p">--</span><span class="n">lives</span> <span class="p">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">object</span> <span class="p">=</span> <span class="n">createPlayer</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">objects</span><span class="p">.</span><span class="n">remove</span><span class="p">!((</span><span class="k">ref</span> <span class="n">o</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">o</span><span class="p">.</span><span class="n">dead</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>And in <tt class="docutils literal"><span class="pre">main()</span></tt>, before <tt class="docutils literal"><span class="pre">if(game.lives</span> <span class="pre">==</span> <span class="pre">0)</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="n">entityCollisions</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">objects</span><span class="p">);</span>
+<span class="n">game</span><span class="p">.</span><span class="n">objects</span> <span class="p">=</span> <span class="n">entityDeaths</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">objects</span><span class="p">,</span> <span class="n">game</span><span class="p">.</span><span class="n">lives</span><span class="p">);</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="collisions-and-dying-explanation">
+<h2>Collisions and dying (explanation)</h2>
+<ul class="simple">
+<li>We add a new <tt class="docutils literal"><span class="pre">dead</span></tt> member to <tt class="docutils literal"><span class="pre">Entity</span></tt> so we can flag dead entities.</li>
+<li><tt class="docutils literal"><span class="pre">entityDeaths</span></tt> respawns the player ship if there are lives left<ul>
+<li><strong>Ⓓ</strong> <a class="reference external" href="http://dlang.org/phobos/std_algorithm.html#.remove">std.algorithm.remove</a> with a CT lambda removes dead entities.</li>
+</ul>
+</li>
+<li><tt class="docutils literal"><span class="pre">entityCollisions</span></tt> checks all pairs of entities for (circle) collision<ul>
+<li><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">objects[i</span> <span class="pre">+</span> <span class="pre">1</span> <span class="pre">..</span> <span class="pre">$]</span></tt> - a slice of <tt class="docutils literal"><span class="pre">objects</span></tt> after the <tt class="docutils literal"><span class="pre">i</span></tt>-th element</li>
+<li>Colliding entities are marked as dead</li>
+</ul>
+</li>
+<li><tt class="docutils literal"><span class="pre">entityDeaths</span></tt> uses <a class="reference external" href="http://dlang.org/phobos/std_algorithm.html#.filter">std.algorithm.filter</a> to filter dead entities<ul>
+<li>If the player ship is dead and there are more lives, respawn</li>
+</ul>
+</li>
+<li>Test again (<tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt>, then <tt class="docutils literal"><span class="pre">./asteroids</span></tt>).<ul>
+<li>Objects should now die when colliding.</li>
+</ul>
+</li>
+</ul>
+<p><a class="reference external" href="http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-4-collisions.tar.gz">[Checkpoint 4 - collisions and dying]</a></p>
+
+</article>
+<article class="slide level-1" id="debris-projectiles">
+<h1>Debris &amp; projectiles</h1>
+<ul class="simple">
+<li>Big asteroids should break up into smaller ones</li>
+<li>Player should be able to shoot down the asteroids</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="debris-copy">
+<h2>Debris (copy)</h2>
+<p>Into <tt class="docutils literal"><span class="pre">Entity</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">static</span> <span class="n">immutable</span> <span class="n">typeDebrisCount</span> <span class="p">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">];</span>
+<span class="k">static</span> <span class="n">immutable</span> <span class="n">typeDebrisType</span>  <span class="p">=</span> <span class="p">[</span><span class="n">Type</span><span class="p">.</span><span class="n">init</span><span class="p">,</span> <span class="n">Type</span><span class="p">.</span><span class="n">init</span><span class="p">,</span> <span class="n">Type</span><span class="p">.</span><span class="n">AsteroidMed</span><span class="p">,</span> <span class="n">Type</span><span class="p">.</span><span class="n">AsteroidSmall</span><span class="p">,</span> <span class="n">Type</span><span class="p">.</span><span class="n">init</span><span class="p">];</span>
+
+<span class="n">Type</span> <span class="n">debrisType</span><span class="p">()</span>  <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">typeDebrisType</span><span class="p">[</span><span class="n">type</span><span class="p">];</span> <span class="p">}</span>
+<span class="kt">uint</span> <span class="n">debrisCount</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">typeDebrisCount</span><span class="p">[</span><span class="n">type</span><span class="p">];</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>A new function (somewhere below <tt class="docutils literal"><span class="pre">import</span> <span class="pre">std.random:</span> <span class="pre">uniform</span></tt>):</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="n">Entity</span> <span class="n">createDebris</span><span class="p">(</span><span class="k">ref</span> <span class="n">Entity</span> <span class="n">parent</span><span class="p">,</span> <span class="n">Entity</span><span class="p">[]</span> <span class="n">objects</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">auto</span> <span class="n">result</span> <span class="p">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">parent</span><span class="p">.</span><span class="n">debrisType</span><span class="p">);</span>
+    <span class="k">foreach</span><span class="p">(</span><span class="n">attempt</span><span class="p">;</span> <span class="mi">0</span> <span class="p">..</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">result</span><span class="p">.</span><span class="n">rotRadians</span> <span class="p">=</span> <span class="n">uniform</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span> <span class="mi">2</span> <span class="p">*</span> <span class="n">PI</span><span class="p">);</span>
+        <span class="k">const</span> <span class="n">direction</span> <span class="p">=</span> <span class="n">result</span><span class="p">.</span><span class="n">rotRadians</span><span class="p">.</span><span class="n">directionVector</span><span class="p">;</span>
+        <span class="n">result</span><span class="p">.</span><span class="n">pos</span>   <span class="p">=</span> <span class="n">parent</span><span class="p">.</span><span class="n">pos</span> <span class="p">+</span> <span class="n">direction</span> <span class="p">*</span> <span class="p">(</span><span class="n">parent</span><span class="p">.</span><span class="n">radius</span> <span class="p">+</span> <span class="n">result</span><span class="p">.</span><span class="n">radius</span><span class="p">)</span> <span class="p">*</span> <span class="mf">1.5</span><span class="p">;</span>
+        <span class="n">result</span><span class="p">.</span><span class="n">speed</span> <span class="p">=</span> <span class="n">parent</span><span class="p">.</span><span class="n">speed</span> <span class="p">+</span> <span class="n">direction</span> <span class="p">*</span> <span class="n">uniform</span><span class="p">(</span><span class="mf">30.0f</span><span class="p">,</span> <span class="mf">90.0f</span><span class="p">);</span>
+        <span class="c1">// If nothing collides with result, we have a good position.</span>
+        <span class="k">if</span><span class="p">(!</span><span class="n">objects</span><span class="p">.</span><span class="n">canFind</span><span class="p">!((</span><span class="k">ref</span> <span class="n">o</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">pos</span> <span class="p">-</span> <span class="n">o</span><span class="p">.</span><span class="n">pos</span><span class="p">).</span><span class="n">length</span> <span class="p">&lt;</span> <span class="n">result</span><span class="p">.</span><span class="n">radius</span> <span class="p">+</span> <span class="n">o</span><span class="p">.</span><span class="n">radius</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>And into the <tt class="docutils literal"><span class="pre">foreach()</span></tt> in <tt class="docutils literal"><span class="pre">entityDeaths()</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">foreach</span><span class="p">(</span><span class="n">d</span><span class="p">;</span> <span class="mi">0</span> <span class="p">..</span> <span class="n">object</span><span class="p">.</span><span class="n">debrisCount</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">objects</span> <span class="p">~=</span> <span class="n">createDebris</span><span class="p">(</span><span class="n">object</span><span class="p">,</span> <span class="n">objects</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="debris-explanation">
+<h2>Debris (explanation)</h2>
+<ul>
+<li><p class="first">Debris types/counts to spawn by each entity type</p>
+<ul>
+<li><p class="first"><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">Type.init</span></tt> - default value of type Type.</p>
+<p>We don't care about debris types where debris counts are 0</p>
+</li>
+</ul>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">createDebris()</span></tt> spawns debris flying in random direction from parent</p>
+<ul class="simple">
+<li>Similar to <tt class="docutils literal"><span class="pre">createAsteroid</span></tt> - multiple attempts.</li>
+<li>Debris speed is added to speed of the parent entity.</li>
+</ul>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">createDebris</span></tt> is called from <tt class="docutils literal"><span class="pre">entityDeaths</span></tt> when an entity dies.</p>
+</li>
+<li><p class="first">Test again (<tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt>, then <tt class="docutils literal"><span class="pre">./asteroids</span></tt>).</p>
+<p>Asteroid collisions should result in debris - smaller asteroids.</p>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="projectiles-copy">
+<h2>Projectiles (copy)</h2>
+<div class="highlight-d"><div class="highlight"><pre><span class="n">Entity</span> <span class="n">createProjectile</span><span class="p">(</span><span class="k">ref</span> <span class="n">Entity</span> <span class="n">shooter</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">auto</span> <span class="n">result</span> <span class="p">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">Entity</span><span class="p">.</span><span class="n">Type</span><span class="p">.</span><span class="n">Projectile</span><span class="p">);</span>
+    <span class="k">const</span> <span class="n">direction</span> <span class="p">=</span> <span class="n">shooter</span><span class="p">.</span><span class="n">rotRadians</span><span class="p">.</span><span class="n">directionVector</span><span class="p">;</span>
+    <span class="c1">// Ensure the projectile gets spawned outside the shooter&#39;s collision radius.</span>
+    <span class="n">result</span><span class="p">.</span><span class="n">pos</span>        <span class="p">=</span> <span class="n">shooter</span><span class="p">.</span><span class="n">pos</span> <span class="p">+</span> <span class="n">direction</span> <span class="p">*</span> <span class="p">(</span><span class="n">shooter</span><span class="p">.</span><span class="n">radius</span> <span class="p">+</span> <span class="n">result</span><span class="p">.</span><span class="n">radius</span><span class="p">)</span> <span class="p">*</span> <span class="mf">1.5</span><span class="p">;</span>
+    <span class="c1">// Speed of the projectile is added to the shooter&#39;s speed.</span>
+    <span class="n">result</span><span class="p">.</span><span class="n">speed</span>      <span class="p">=</span> <span class="n">shooter</span><span class="p">.</span><span class="n">speed</span> <span class="p">+</span> <span class="n">direction</span> <span class="p">*</span> <span class="mf">400.0</span><span class="p">;</span>
+    <span class="n">result</span><span class="p">.</span><span class="n">rotRadians</span> <span class="p">=</span> <span class="n">shooter</span><span class="p">.</span><span class="n">rotRadians</span><span class="p">;</span>
+    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Into <tt class="docutils literal"><span class="pre">while()</span></tt> loop in <tt class="docutils literal"><span class="pre">handleInput()</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// Ignore repeated events when the key is being held</span>
+<span class="k">if</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="n">type</span> <span class="p">==</span> <span class="n">SDL_KEYDOWN</span> <span class="p">&amp;&amp;</span> <span class="p">!</span><span class="n">event</span><span class="p">.</span><span class="n">key</span><span class="p">.</span><span class="n">repeat</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">switch</span><span class="p">(</span><span class="n">event</span><span class="p">.</span><span class="n">key</span><span class="p">.</span><span class="n">keysym</span><span class="p">.</span><span class="n">scancode</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">case</span> <span class="n">SDL_SCANCODE_SPACE</span><span class="p">:</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">phase</span> <span class="p">==</span> <span class="n">GameState</span><span class="p">.</span><span class="n">Phase</span><span class="p">.</span><span class="n">Playing</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">game</span><span class="p">.</span><span class="n">objects</span> <span class="p">~=</span> <span class="n">createProjectile</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">player</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="k">default</span><span class="p">:</span> <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="projectiles-explanation">
+<h2>Projectiles (explanation)</h2>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">createProjectile</span></tt> spawns a projectile where the shooter is facing<ul>
+<li>Projectile speed is relative to the shooter</li>
+</ul>
+</li>
+<li>The projectiles will last until they collide with something (for now)<ul>
+<li>Try not to kill yourself</li>
+</ul>
+</li>
+<li>We ignore key repeats when a key is held<ul>
+<li>Repeats depend on platform; if desired, implement manually</li>
+</ul>
+</li>
+<li>Test again (<tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt>, then <tt class="docutils literal"><span class="pre">./asteroids</span></tt>)<ul>
+<li>The game should slightly remind you of Asteroids at this point</li>
+</ul>
+</li>
+</ul>
+<p><a class="reference external" href="http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-5-projectiles.tar.gz">[Checkpoint 5 - projectiles]</a></p>
+
+</article>
+<article class="slide level-1" id="turning-it-into-a-game">
+<h1>Turning it into a game</h1>
+<ul class="simple">
+<li>Rounds</li>
+<li>HUD</li>
+<li>Non-placeholder graphics</li>
+<li>Projectile lifetimes</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="rounds-copy-explanation">
+<h2>Rounds (copy/explanation)</h2>
+<p>Into GameState:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="kt">uint</span> <span class="n">round</span> <span class="p">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Update the <tt class="docutils literal"><span class="pre">if(asteroidCount</span> <span class="pre">==</span> <span class="pre">0)</span></tt> code in <tt class="docutils literal"><span class="pre">main()</span></tt> with this:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// If there are no asteroids, start a new round by spawning some more.</span>
+<span class="k">if</span><span class="p">(</span><span class="n">asteroidCount</span> <span class="p">==</span> <span class="mi">0</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="p">++</span><span class="n">game</span><span class="p">.</span><span class="n">round</span><span class="p">;</span>
+    <span class="c1">// 2, 4, 8, 16 asteroids in rounds 1,2,3,4 but no more in successive rounds.</span>
+    <span class="k">foreach</span><span class="p">(</span><span class="n">spawn</span><span class="p">;</span> <span class="mi">0</span> <span class="p">..</span> <span class="n">min</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">2</span> <span class="p">^^</span> <span class="n">game</span><span class="p">.</span><span class="n">round</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="n">game</span><span class="p">.</span><span class="n">objects</span> <span class="p">~=</span> <span class="n">createAsteroid</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">objects</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>A <em>round</em>/level ends when all asteroids are destroyed.</li>
+<li>More asteroids are spawned in higher rounds<ul>
+<li><strong>Ⓓ</strong> but never more than 16 - we use <a class="reference external" href="http://dlang.org/phobos/std_algorithm.html#.min">std.algorithm.min</a> to force this</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="hud-copy">
+<h2>HUD (copy)</h2>
+<p>Copy into <tt class="docutils literal"><span class="pre">main()</span></tt> after the <tt class="docutils literal"><span class="pre">entityRendering()</span></tt> call:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// Draw player &#39;lives&#39;</span>
+<span class="k">foreach</span><span class="p">(</span><span class="n">life</span><span class="p">;</span> <span class="mi">0</span> <span class="p">..</span> <span class="n">game</span><span class="p">.</span><span class="n">lives</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">platform</span><span class="p">.</span><span class="n">renderer</span><span class="p">.</span><span class="n">renderObject</span><span class="p">(</span><span class="n">Entity</span><span class="p">.</span><span class="n">Type</span><span class="p">.</span><span class="n">Player</span><span class="p">,</span>
+                                   <span class="n">vec2f</span><span class="p">((</span><span class="mi">1</span> <span class="p">+</span> <span class="n">life</span><span class="p">)</span> <span class="p">*</span> <span class="mf">12.0f</span><span class="p">,</span> <span class="mf">20.0f</span><span class="p">),</span> <span class="mf">0.0f</span><span class="p">,</span> <span class="mf">6.0f</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="nb">string</span> <span class="n">text</span><span class="p">;</span>
+<span class="k">final</span> <span class="k">switch</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">phase</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">case</span> <span class="n">GameState</span><span class="p">.</span><span class="n">Phase</span><span class="p">.</span><span class="n">Playing</span><span class="p">:</span>  <span class="n">text</span> <span class="p">=</span> <span class="s">&quot;Round %s&quot;</span><span class="p">.</span><span class="n">format</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">round</span><span class="p">);</span> <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">GameState</span><span class="p">.</span><span class="n">Phase</span><span class="p">.</span><span class="n">GameOver</span><span class="p">:</span> <span class="n">text</span> <span class="p">=</span> <span class="s">&quot;Game Over&quot;</span><span class="p">;</span> <span class="k">break</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Extremely ineffecient way of displaying text</span>
+<span class="c1">// -- in a real project, this should be cached</span>
+<span class="k">auto</span> <span class="n">textSurface</span> <span class="p">=</span> <span class="n">platform</span><span class="p">.</span><span class="n">font</span><span class="p">.</span><span class="n">renderTextBlended</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">SDL_Color</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">));</span>
+<span class="k">scope</span><span class="p">(</span><span class="n">exit</span><span class="p">)</span> <span class="p">{</span> <span class="n">textSurface</span><span class="p">.</span><span class="n">close</span><span class="p">();</span> <span class="p">}</span>
+<span class="k">auto</span> <span class="n">textTexture</span> <span class="p">=</span> <span class="k">new</span> <span class="n">SDL2Texture</span><span class="p">(</span><span class="n">platform</span><span class="p">.</span><span class="n">renderer</span><span class="p">,</span> <span class="n">textSurface</span><span class="p">);</span>
+<span class="k">scope</span><span class="p">(</span><span class="n">exit</span><span class="p">)</span> <span class="p">{</span> <span class="n">textTexture</span><span class="p">.</span><span class="n">close</span><span class="p">();</span> <span class="p">}</span>
+
+<span class="n">platform</span><span class="p">.</span><span class="n">renderer</span><span class="p">.</span><span class="n">copy</span><span class="p">(</span><span class="n">textTexture</span><span class="p">,</span> <span class="p">(</span><span class="n">gameArea</span><span class="p">.</span><span class="n">x</span> <span class="p">-</span> <span class="n">textSurface</span><span class="p">.</span><span class="n">width</span><span class="p">)</span> <span class="p">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="hud-explanation">
+<h2>HUD (explanation)</h2>
+<ul>
+<li><p class="first">We draw 'lifes' with <tt class="docutils literal"><span class="pre">renderObject</span></tt>, as if drawing the player ship</p>
+</li>
+<li><p class="first"><strong>Ⓓ</strong> <tt class="docutils literal"><span class="pre">final</span> <span class="pre">switch</span></tt> ensures we handle all Phases</p>
+</li>
+<li><p class="first">We render a string to a texture and draw it to the screen</p>
+<ul>
+<li><p class="first">This is extremely inefficient (texture thrown away each frame)</p>
+<p>In a 'real' game, use caching, glyph atlas texture, etc.</p>
+</li>
+</ul>
+</li>
+<li><p class="first">Test again (<tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt>, then <tt class="docutils literal"><span class="pre">./asteroids</span></tt>)</p>
+<ul class="simple">
+<li>You should see the HUD and more asteroids in each round</li>
+</ul>
+</li>
+</ul>
+<p><a class="reference external" href="http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-6-hud.tar.gz">[Checkpoint 6 - HUD and rounds]</a></p>
+
+</article>
+<article class="slide level-2" id="better-graphics-copy">
+<h2>Better graphics (copy)</h2>
+<p>Into <tt class="docutils literal"><span class="pre">Entity</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">alias</span> <span class="n">V</span> <span class="p">=</span> <span class="n">vec2f</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="n">immutable</span> <span class="n">graphics</span> <span class="p">=</span> <span class="p">[[</span><span class="n">V</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="p">-</span><span class="mf">1.2</span><span class="p">),</span>    <span class="n">V</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span>  <span class="mf">1.0</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>     <span class="n">V</span><span class="p">(-</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="p">-</span><span class="mf">1.2</span><span class="p">),</span>    <span class="n">V</span><span class="p">(-</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)],</span>
+                             <span class="p">[</span><span class="n">V</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span>  <span class="p">-</span><span class="mf">1.2</span><span class="p">),</span>   <span class="n">V</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span>  <span class="mf">1.2</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(-</span><span class="mf">0.5</span><span class="p">,</span> <span class="p">-</span><span class="mf">1.2</span><span class="p">),</span>   <span class="n">V</span><span class="p">(-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">)],</span>
+                             <span class="p">[</span><span class="n">V</span><span class="p">(-</span><span class="mf">1.0</span><span class="p">,</span>  <span class="p">-</span><span class="mf">0.75</span><span class="p">),</span> <span class="n">V</span><span class="p">(-</span><span class="mf">0.75</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.82</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(-</span><span class="mf">0.75</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.82</span><span class="p">),</span> <span class="n">V</span><span class="p">(-</span><span class="mf">0.25</span><span class="p">,</span> <span class="p">-</span><span class="mf">1.0</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(-</span><span class="mf">0.25</span><span class="p">,</span> <span class="p">-</span><span class="mf">1.0</span><span class="p">),</span>  <span class="n">V</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.32</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span>   <span class="p">-</span><span class="mf">0.32</span><span class="p">),</span> <span class="n">V</span><span class="p">(</span><span class="mf">0.92</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(</span><span class="mf">0.92</span><span class="p">,</span>  <span class="mf">0.35</span><span class="p">),</span>  <span class="n">V</span><span class="p">(</span><span class="mf">0.65</span><span class="p">,</span> <span class="mf">0.55</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(</span><span class="mf">0.65</span><span class="p">,</span>  <span class="mf">0.55</span><span class="p">),</span>  <span class="n">V</span><span class="p">(-</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(-</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">),</span>  <span class="n">V</span><span class="p">(-</span><span class="mf">1.0</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.5</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(-</span><span class="mf">1.0</span><span class="p">,</span>  <span class="p">-</span><span class="mf">0.5</span><span class="p">),</span>  <span class="n">V</span><span class="p">(-</span><span class="mf">1.0</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.75</span><span class="p">)],</span>
+                             <span class="p">[</span><span class="n">V</span><span class="p">(-</span><span class="mf">1.0</span><span class="p">,</span>  <span class="p">-</span><span class="mf">0.75</span><span class="p">),</span> <span class="n">V</span><span class="p">(-</span><span class="mf">0.75</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.82</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(-</span><span class="mf">0.75</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.82</span><span class="p">),</span> <span class="n">V</span><span class="p">(-</span><span class="mf">0.25</span><span class="p">,</span> <span class="p">-</span><span class="mf">1.0</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(-</span><span class="mf">0.25</span><span class="p">,</span> <span class="p">-</span><span class="mf">1.0</span><span class="p">),</span>  <span class="n">V</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>     <span class="n">V</span><span class="p">(</span><span class="mf">0.65</span><span class="p">,</span>  <span class="mf">0.55</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(</span><span class="mf">0.65</span><span class="p">,</span>  <span class="mf">0.55</span><span class="p">),</span>  <span class="n">V</span><span class="p">(-</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(-</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">),</span>  <span class="n">V</span><span class="p">(-</span><span class="mf">1.0</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.5</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(-</span><span class="mf">1.0</span><span class="p">,</span>  <span class="p">-</span><span class="mf">0.5</span><span class="p">),</span>  <span class="n">V</span><span class="p">(-</span><span class="mf">1.0</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.75</span><span class="p">)],</span>
+                             <span class="p">[</span><span class="n">V</span><span class="p">(-</span><span class="mf">1.0</span><span class="p">,</span>  <span class="p">-</span><span class="mf">0.75</span><span class="p">),</span> <span class="n">V</span><span class="p">(-</span><span class="mf">0.75</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.82</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(-</span><span class="mf">0.75</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.82</span><span class="p">),</span> <span class="n">V</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span>   <span class="p">-</span><span class="mf">0.32</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span>   <span class="p">-</span><span class="mf">0.32</span><span class="p">),</span> <span class="n">V</span><span class="p">(</span><span class="mf">0.92</span><span class="p">,</span> <span class="mf">0.35</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(</span><span class="mf">0.92</span><span class="p">,</span>  <span class="mf">0.35</span><span class="p">),</span>  <span class="n">V</span><span class="p">(</span><span class="mf">0.65</span><span class="p">,</span> <span class="mf">0.55</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(</span><span class="mf">0.65</span><span class="p">,</span> <span class="mf">0.55</span><span class="p">),</span>   <span class="n">V</span><span class="p">(-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">),</span>
+                              <span class="n">V</span><span class="p">(-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">),</span>    <span class="n">V</span><span class="p">(-</span><span class="mf">1.0</span><span class="p">,</span> <span class="p">-</span><span class="mf">0.75</span><span class="p">)]];</span>
+</pre></div>
+</div>
+<p>And in <tt class="docutils literal"><span class="pre">renderObject()</span></tt>, replace the <tt class="docutils literal"><span class="pre">vertices</span></tt> definition with:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="k">auto</span> <span class="n">vertices</span> <span class="p">=</span> <span class="n">Entity</span><span class="p">.</span><span class="n">graphics</span><span class="p">[</span><span class="n">type</span><span class="p">];</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="better-graphics-explanation">
+<h2>Better graphics (explanation)</h2>
+<ul class="simple">
+<li><strong>Ⓓ</strong> An <tt class="docutils literal"><span class="pre">alias</span></tt> is used so we don't have to type <tt class="docutils literal"><span class="pre">vec2f</span></tt> all over the place</li>
+<li><tt class="docutils literal"><span class="pre">graphics</span></tt>: array of vertices (paired into lines) for all entity types<ul>
+<li>Numbers determined with with grid paper and pencil</li>
+</ul>
+</li>
+<li><tt class="docutils literal"><span class="pre">renderObject()</span></tt> draws entity type graphics instead of just a square</li>
+<li>Test again (<tt class="docutils literal"><span class="pre">dub</span> <span class="pre">build</span> <span class="pre">--compiler=ldc2</span></tt>, then <tt class="docutils literal"><span class="pre">./asteroids</span></tt>)<ul>
+<li>HUD should be visible</li>
+</ul>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="projectile-lifetimes-copy">
+<h2>Projectile lifetimes (copy)</h2>
+<p>Into <tt class="docutils literal"><span class="pre">Entity</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="c1">// Time left till the entity is destroyed.</span>
+<span class="kt">float</span> <span class="n">timeLeft</span> <span class="p">=</span> <span class="kt">float</span><span class="p">.</span><span class="n">infinity</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Into <tt class="docutils literal"><span class="pre">createProjectile</span></tt>:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="n">result</span><span class="p">.</span><span class="n">timeLeft</span> <span class="p">=</span> <span class="mf">1.4f</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>New function:</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="kt">void</span> <span class="n">entityTimeLeft</span><span class="p">(</span><span class="n">Entity</span><span class="p">[]</span> <span class="n">objects</span><span class="p">,</span> <span class="kt">float</span> <span class="n">frameTime</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">foreach</span><span class="p">(</span><span class="k">ref</span> <span class="n">object</span><span class="p">;</span> <span class="n">objects</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">object</span><span class="p">.</span><span class="n">timeLeft</span> <span class="p">-=</span> <span class="n">frameTime</span><span class="p">;</span>
+        <span class="c1">// Kill objects that run out of time</span>
+        <span class="n">object</span><span class="p">.</span><span class="n">dead</span> <span class="p">=</span> <span class="n">object</span><span class="p">.</span><span class="n">dead</span> <span class="p">||</span> <span class="n">object</span><span class="p">.</span><span class="n">timeLeft</span> <span class="p">&lt;=</span> <span class="mf">0.0f</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>And use it (in <tt class="docutils literal"><span class="pre">main()</span></tt> after <tt class="docutils literal"><span class="pre">entityMovement()</span></tt>):</p>
+<div class="highlight-d"><div class="highlight"><pre><span class="n">entityTimeLeft</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">objects</span><span class="p">,</span> <span class="n">game</span><span class="p">.</span><span class="n">frameTimeSecs</span><span class="p">);</span>
+</pre></div>
+</div>
+
+</article>
+<article class="slide level-2" id="projectile-lifetimes-explanation">
+<h2>Projectile lifetimes (explanation)</h2>
+<ul class="simple">
+<li>We entity lifetimes</li>
+<li>We use <tt class="docutils literal"><span class="pre">float.infinity</span></tt> for infinite lifetimes (default)</li>
+<li>Projectile lifetimes are now limited to 1.4s</li>
+</ul>
+
+</article>
+<article class="slide level-1" id="end-stuff">
+<h1>End stuff</h1>
+
+</article>
+<article class="slide level-2" id="d-links">
+<h2>D Links</h2>
+<ul class="simple">
+<li><a class="reference external" href="http://ddili.org/ders/d.en/index.html">Programming in D</a> (by Ali Çehreli)<ul>
+<li>Really good and comphrehensive introductory D book</li>
+<li>Written for non-programmers so can be a bit slow</li>
+</ul>
+</li>
+<li><a class="reference external" href="forum.dlang.org">Forum/newsgroup</a><ul>
+<li>Language discussion, learning D, project announcements</li>
+</ul>
+</li>
+<li><a class="reference external" href="wiki.dlang.org">Wiki</a></li>
+<li><a class="reference external" href="http://dlang.org/phobos/index.html">Standard library docs</a></li>
+<li><a class="reference external" href="code.dlang.org">DUB repository</a><ul>
+<li>Many D libs (increasing as DUB is becoming standard)</li>
+</ul>
+</li>
+<li><a class="reference external" href="http://dpaste.dzfl.pl/">DPaste</a> (Pastebin that can run D code)</li>
+<li><a class="reference external" href="http://d.godbolt.org/">Interactive compiler</a> with ASM view</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="d-game-lib-links">
+<h2>D game lib links</h2>
+<ul>
+<li><p class="first"><a class="reference external" href="https://github.com/DerelictOrg">Derelict</a> - Bindings to all the necessary C libs</p>
+<blockquote>
+<div><ul class="simple">
+<li>SDL, GL, sound, physics, images, fonts, videos, models...</li>
+</ul>
+</div></blockquote>
+</li>
+<li><p class="first"><a class="reference external" href="https://github.com/d-gamedev-team/gfm">gfm</a> - More D-style libs, still unstable</p>
+</li>
+<li><p class="first"><a class="reference external" href="https://github.com/Circular-Studios/Dash">Dash</a> - Engine by Circular Studios</p>
+</li>
+<li><p class="first"><a class="reference external" href="https://github.com/CyberShadow/ae">Vladimir Panteleev's code</a> - The Worms Armageddon guy</p>
+</li>
+<li><p class="first">More on <a class="reference external" href="http://code.dlang.org">http://code.dlang.org</a></p>
+</li>
+</ul>
+
+</article>
+<article class="slide level-2" id="d-ide-editor-links">
+<h2>D IDE/editor links</h2>
+<ul class="simple">
+<li><a class="reference external" href="http://wiki.dlang.org/D_in_Vim">D in Vim</a></li>
+<li><a class="reference external" href="https://github.com/Emacs-D-Mode-Maintainers/Emacs-D-Mode">Emacs D mode</a></li>
+<li><a class="reference external" href="https://code.google.com/p/ddt/">DDT (Eclipse)</a></li>
+<li><a class="reference external" href="http://wiki.dlang.org/Mono-D">Mono-D (MonoDevelop)</a></li>
+<li><a class="reference external" href="http://rainers.github.io/visuald/visuald/StartPage.html">Visual D (widle only)</a></li>
+</ul>
+<p>Full list of <a class="reference external" href="http://wiki.dlang.org/IDEs">IDEs</a> and <a class="reference external" href="http://wiki.dlang.org/Editors">Editors</a> on wiki.</p>
+
+</article>
+<article class="slide level-1" id="it-s-over">
+<h1>It's over</h1>
+<p><a class="reference external" href="http://web.ics.upjs.sk/ihra/">IHRA</a></p>
+
+</article>
+
+
+</section>
+
+<section id="slide_notes">
+
+</section>
+
+  </body>
+</html>

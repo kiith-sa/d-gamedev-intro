@@ -1,0 +1,1377 @@
+.. Packages needed:
+..
+.. g++/clang with -std=c++11
+.. time
+.. valgrind (only callgrind needed)
+.. kcachegrind
+.. graphviz
+.. linux-tools-common / linux-tools-generic
+.. some sort of diff
+
+
+.. role:: footnote
+
+========================
+Intro to gamedev using D
+========================
+
+:Author:
+    Ferdinand Majerech
+
+==================== ==============
+``Enter``, ``→``     next slide
+``Backspace``, ``←`` previous slide
+``T``                overview
+==================== ==============
+
+`IHRA <http://web.ics.upjs.sk/ihra/>`_
+
+
+
+.. XXX XXX GITHUB LINK AT THE ENDJ
+.. XXX COMMIT GENERATED SLIDES
+.. XXX XXX LINK TO 'THESE STEPS' (ONCE WE ARE ON GITHUB)
+.. XXX README & LINK TO SLIDES AT DEFENESTRATE
+.. XXX RCHA
+.. XXX TRY TO GO ACCORDING TO TUTORIAL ON THE VM
+.. XXX XXX PROFILING SLIDES
+
+.. XXX AFTER OSSVIKEND:
+       .. XXX PUT THIS ON defenestrate FORUM
+       .. XXX AND ON D FORUMS, AND REQUEST FEEDBACK (HOW TO MAKE IT MORE D-LIKE, WHAT IS BETTER
+              THAN GFM, ETC.)
+       .. XXX XXX PRESOVGUY: SEND MAIL ABOUT BACO TALK (AND OSSVIKEND?)
+          - AND MENTION NEW IHRA SITE/FORUM
+          - ALSO INFORM GAMESFARM, COMUNIQUE ABOUT NEW TALK
+              AND FIND THE FILE WITH 3Division NOTES - NEXT TALK CANDIDATE
+          - AND LUBOANTONI UPDATE - AND!!! ASK ABOUT T-SHIRTS
+              ALSO MENTION GAMEPAD
+          - AND PROBABLY FINALLY MENTION IHRA (AND MARTIN BACO TALK) ON KYBERIA
+       .. XXX ANKAKDE
+
+
+
+------------------
+What this is about
+------------------
+
+* Gamedev through D, **not** D through gamedev
+* Intro to a *project* in D
+* Game is the focus
+
+  - Code is mostly "C/C++ with extras"
+  - Most "interesting" D features ignored to avoid info overload
+
+
+--------------------------
+Format of this... workshop
+--------------------------
+
+* Copy code (if not specified *where*, copy it outside of any function/class)
+* Explanation/questions
+* Test
+* Repeat
+
+???
+
+* PROFIT (???)
+
+* Also, checkpoints
+
+
+--------
+The goal
+--------
+
+.. raw:: html
+
+   <video preload="auto" autoplay controls loop poster="../_static/asteroids.png">
+      <source src="_static/asteroids.webm" type="video/webm">
+   </video>
+
+---------
+The tools
+---------
+
+* D has 3 popular compilers:
+
+  - ``dmd``: fastest compilation, non-kosher OSS, always up-to-date
+  - ``gdc``: fastest code, OSS, 1-2 months behind, Debuntu repos
+  - ``ldc2``: good code, OSS, 1-2 months behind, Fedora repos
+
+* ``dub``:
+
+  - Build system and package manager
+  - De-facto standard for D project management
+  - Still new, only stable recently
+  - http://code.dlang.org
+
+------------------
+Starting a project
+------------------
+
+On this VM, we only have LDC2 - if using your own machine, follow `these steps <TODO>`_ to
+install a D compiler and DUB.
+
+* Create a directory
+* Type into terminal: ``dub init``
+* This will create ``dub.json`` (project file), and ``source/app.d`` with a ``main()``
+
+------------
+``dub.json``
+------------
+
+* ``dub`` project file
+* Already supported by some D IDEs
+
+* Replace contents of ``dub.json`` with this:
+
+.. code-block:: d
+
+   {
+   	"name": "Asteroids",
+   	"description": "A simple Asteroids clone",
+   	"copyright": "Copyright © 2014, $NAME",
+   	"authors": ["$NAME"],
+   	"dependencies": {
+   		"gfm:sdl2": "==1.2.5",
+   		"gfm:math": "==1.2.5",
+   	}
+   }
+
+* ``dub`` automatically downloads/builds dependencies when needed
+
+
+------
+main()
+------
+
+* Open ``source/app.d``. You should see:
+
+.. code-block:: d
+
+   import std.stdio;
+
+   void main()
+   {
+       writeln("Edit source/app.d to start your project.");
+   }
+
+* ``main()`` could also be e.g. ``int main(string[] args)`` like C
+
+* Compile with ``dub build --compiler=ldc2``, and run with ``./asteroids``
+
+  - Compiler must be specified (for now) if not default (DMD)
+
+----------
+Font files
+----------
+
+* With most games you want to ship a font with the game
+
+  - Text drawing needs special care (can't leave it to GTK/Qt/etc.)
+  - Fonts vary between systems
+  - Often a unique font is wanted for a game
+
+* Get `DroidSans.ttf <http://www.fontsquirrel.com/fonts/download/Droid-Sans>`_
+
+  Download/extract so ``DroidSans.ttf`` is in the same directory as ``dub.json``
+
+
+--------------------------
+Some imports to start with
+--------------------------
+
+* Copy to the top of ``source/app.d``
+
+.. code-block:: d
+
+   import std.algorithm: canFind, count, filter, min, remove; // (1)
+   import std.math: fmod, PI; // (2)
+   import gfm.math, gfm.sdl2; // (3)
+   import std.logger; // std.experimental.logger in newer versions
+
+* **Ⓓ** *(1), (2)*: selective imports from modules/packages
+
+  - Like ``from math import pi`` in Python
+  - Good to keep track of what is actually used
+
+* **Ⓓ** *(3)*: import everything from 2 modules/packages
+
+  - Like imports in Java or ``from math import *`` in Python
+
+
+===================
+Platform code (SDL)
+===================
+
+* Every game needs base code to deal with input, video, sound...
+
+  - Writing this for all platforms is a stupid idea
+  - `SDL2 <http://libsdl.org>`_ exists, runs pretty much everywhere
+
+    * Written in C
+  - Different libs exist (Allegro, ClanLib, SFML), not quite as robust
+
+------------------------------------
+GamePlatform stub (copy/explanation)
+------------------------------------
+
+(Don't care about correct OOP here)
+
+Copy somewhere in ``source/app.d``:
+
+.. code-block:: d
+
+   // Compile-time constants
+   enum vec2i gameArea  = vec2i(800, 600);
+   enum vec2f gameAreaF = vec2f(800.0f, 600.0f);
+
+   struct GamePlatform
+   {
+       SDL2 sdl2;             // Main SDL2 library, wrapped by gfm
+       SDLTTF sdlttf;         // SDL2 extension for font handling
+       SDL2Window window;     // Main game window
+       SDL2Renderer renderer; // Simple SDL2 builtin 2D renderer
+       SDLFont font;          // Font for our game
+   }
+
+* **Ⓓ** ``struct``: value RAII type, no inheritance (kinda)
+* **Ⓓ** ``enum``: constant known at compile-time (not an ``enum`` type)
+
+
+---------------------------------------------------
+GamePlatform - init/deinit (copy into GamePlatform)
+---------------------------------------------------
+
+.. code-block:: d
+
+   // Disable the default constructor
+   @disable this();
+
+   this(Logger log)
+   {
+       sdl2   = new SDL2(log);
+       scope(failure) { sdl2.close(); }
+       sdlttf = new SDLTTF(sdl2);
+       scope(failure) { sdlttf.close(); }
+
+       // Hide mouse cursor
+       SDL_ShowCursor(SDL_DISABLE);
+
+       // Open the game window.
+       const windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS;
+       window = new SDL2Window(sdl2, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                               gameArea.x, gameArea.y, windowFlags);
+       scope(failure) { window.close(); }
+
+       // SDL renderer. For 2D drawing, this is easier to use than OpenGL.
+       renderer = new SDL2Renderer(window, SDL_RENDERER_ACCELERATED); // SDL_RENDERER_SOFTWARE
+       scope(failure) { renderer.close(); }
+
+       // Load the font.
+       import std.file: thisExePath;
+       import std.path: buildPath, dirName;
+       font = new SDLFont(sdlttf, thisExePath.dirName.buildPath("DroidSans.ttf"), 20);
+       scope(failure) { font.close(); }
+   }
+
+   ~this()
+   {
+       font.close();
+       renderer.close();
+       window.close();
+       sdlttf.close();
+       sdl2.close();
+   }
+
+
+--------------------------
+GamePlatform (explanation)
+--------------------------
+
+* **Ⓓ** We ``@disable this()`` (default struct constructor)
+* **Ⓓ** ``this()`` initializes what we need
+* **Ⓓ** ``~this()``: *destructor* called when ``GamePlatform`` exits scope
+* **Ⓓ** If anything fails (throws), ``scope(failure)`` blocks will clean up
+* **Ⓓ** ``import std.file: thisExePath``: Local import
+
+  - Good for keeping track of what is used *where*
+  - Code can be copy-pasting without checking imports
+* Questions?
+
+==================
+Back to ``main()``
+==================
+
+* Using ``GamePlatform``
+* Main loop
+* FPS counting (needed to get an idea of how fast/slow this is)
+
+-----------------------------
+Using ``GamePlatform`` (copy)
+-----------------------------
+
+Copy into ``main()``:
+
+.. code-block:: d
+
+    auto log = new FileLogger("asteroids-log.txt", "Asteroids log");
+
+    // Note: Many of the SDL init functions may fail and throw exceptions. In a real game,
+    // this should be handled (e.g. a fallback renderer if accelerated doesn't work).
+    auto platform = GamePlatform(log);
+
+    mainLoop: while(true)
+    {
+        SDL_Event event;
+        while(SDL_PollEvent(&event))
+        {
+            if(event.type == SDL_QUIT) { break mainLoop; }
+        }
+
+        // Fill the entire screen with black (background) color.
+        platform.renderer.setColor(0, 0, 0, 0);
+        platform.renderer.clear();
+
+        // Show the drawn result on the screen (swap front/back buffers)
+        platform.renderer.present();
+    }
+
+
+------------------------------------
+Using ``GamePlatform`` (explanation)
+------------------------------------
+
+* **Ⓓ** ``auto`` means the type is automatically deduced (**not** dynamic)
+
+  - e.g. ``auto`` is replaced by ``FileLogger`` during compilation
+
+* **Ⓓ** ``new`` is used for GC allocs - ``GamePlatform`` is constructed without GC
+
+* We *poll* SDL events to find out what happened last frame
+
+  - ``SDL_QUIT`` - e.g. when the window is closed
+  - **Ⓓ** We label the outer loop ``mainLoop`` to break from the inner loop
+
+* Try ``dub build --compiler=ldc2`` and ``./asteroids`` to see if it works
+
+  - You should see a black window
+
+`[Checkpoint 1 - blank window] <http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-1-window.tar.gz>`_
+
+
+
+-------------------
+FPS counting (copy)
+-------------------
+
+Before the ``while(true)`` loop in ``main()``:
+
+.. code-block:: d
+
+    import std.datetime: Clock;
+    // Last time we checked FPS (hectonanoseconds)
+    ulong prevFPSTime = Clock.currStdTime();
+    // Number of frames since last FPS update
+    uint frames = 0;
+
+At the beginning of the ``while(true)`` loop:
+
+.. code-block:: d
+
+    const currTime = Clock.currStdTime();
+
+    ++frames;
+
+    const timeSinceFPS = currTime - prevFPSTime;
+    // Update FPS every 0.1 seconds/1000000 hectonanoseconds
+    if(timeSinceFPS > 1_000_000)
+    {
+        const fps = frames / (timeSinceFPS / 10_000_000.0);
+        platform.window.setTitle("Asteroids: %.2f FPS".format(fps));
+        frames = 0;
+        prevFPSTime = currTime;
+    }
+
+--------------------------
+FPS counting (explanation)
+--------------------------
+
+* Remember time of previous FPS update
+* Get hecto-nanosecond time with `std.datetime.Clock.currStdTime() <http://dlang.org/phobos/std_datetime.html#.Clock.currStdTime>`_
+* Count frames since previous FPS update
+* If more than 0.1 seconds passes, update FPS in the window title
+
+  - Using `std.string.format() <http://dlang.org/phobos/std_string.html#.format>`_
+* Again, try ``dub build --compiler=ldc2`` and ``./asteroids``
+* **Ⓓ** note that ``const`` can be used similarly to ``auto``
+* To test: ``dub build --compiler=ldc2`` and ``./asteroids``
+
+  - You should see a black window with FPS count at the top
+
+
+
+======
+Entity
+======
+
+* Basic game entity
+* Basic game state
+* Actually drawing something
+
+------------------------
+Basic game entity (copy)
+------------------------
+
+.. code-block:: d
+
+   struct Entity
+   {
+       enum Type: ubyte
+       {
+           Player,
+           Projectile,
+           AsteroidBig, AsteroidMed, AsteroidSmall
+       }
+
+       static immutable typeRadius = [10.0f, 3.0f, 20.0f, 13.0f, 8.0f];
+
+       // Entity type (player, asteroid, etc.)
+       Type type;
+       // 2D (float) position of the entity.
+       vec2f pos;
+       // Speed of the entity (X and Y) in units per second.
+       vec2f speed = vec2f(0.0f, 0.0f);
+       // Rotation of the entity.
+       float rotRadians = 0.0f;
+
+       // Acceleration in units per second ** 2 (used by player)
+       float acceleration = 0.0f;
+       // Turn speed in radians per second (used by player)
+       float turnSpeed  = 0.0f;
+
+       float radius() const { return typeRadius[type]; }
+   }
+
+
+-------------------------------
+Basic game entity (explanation)
+-------------------------------
+
+* An entity is a game object (player, projectile, asteroid)
+* A dumb struct with no real OOP will suffice for now
+
+  - For *real* games, entity-component systems (ECS) > OOP
+
+* We have what we need for simple rendering and movement
+
+  ... and ``acceleration``/``turnSpeed``, to be used by player ship
+
+* **Ⓓ** Entity type is an ``enum``; like C++11 ``enum``
+
+* **Ⓓ** We use function ``radius`` as a property:
+
+  ``someEntity.radius`` translates to ``Entity.typeRadius[someEntity.type]``
+
+  - All entities of the same type have the same radius
+
+-----------------------
+Basic game state (copy)
+-----------------------
+
+.. code-block:: d
+
+    Entity createPlayer()
+    {
+        // Any number of struct members may be set directly at initialization without a constructor.
+        auto result = Entity(Entity.Type.Player, vec2f(0.5f, 0.5f) * gameAreaF);
+        // Can't set these at initialization without setting all preceding members.
+        result.acceleration = 150.0f;
+        result.turnSpeed    = 3.5f;
+        return result;
+    }
+
+    // Class, GC allocated, without RAII (by default) - like Java/C# classes
+    class GameState
+    {
+    private:
+        // Index of the player entity in objects.
+        size_t playerIndex;
+
+    public:
+        Entity[] objects;
+
+        float frameTimeSecs = 0.0f;
+
+        this()
+        {
+            objects = [createPlayer()];
+            playerIndex = 0;
+            // Reserve to avoid (GC) reallocations
+            objects.reserve(100);
+        }
+
+        ref Entity player()
+        {
+            return objects[playerIndex];
+        }
+    }
+
+------------------------------
+Basic game state (explanation)
+------------------------------
+
+* ``createPlayer()`` creates a player ship in the middle of the game area
+* **Ⓓ** ``GameState`` is a ``class`` similar to classes in Java/C#, not C++
+
+  - GC-allocated by default and destructor shouldn't be relied on
+  - **Ⓓ** Entities stored in the ``objects`` array; ``reserve()`` avoids allocs
+  - **Ⓓ** ``player()`` is a *property* to access the player entity (by ``ref``)
+  - ``frameTimeSecs`` is time spent running the previous frame (next slide)
+  - (use of ``private``/``public`` is not kosher OOP to reduce code size)
+
+* **Ⓓ** note: ``private`` applies to *module* in D, not *class*
+
+-------------------------------
+GameState and frame time (copy)
+-------------------------------
+
+Add into ``main()`` before ``while(true)``:
+
+.. code-block:: d
+
+    // Time when the last frame started (in hectonanoseconds, or 10ths of a microsecond)
+    ulong prevTime = prevFPSTime;
+    auto game = new GameState();
+
+And into the ``while`` loop before ``if(timeSinceFPS > 1_000_000)``:
+
+.. code-block:: d
+
+    game.frameTimeSecs  = (currTime - prevTime) / 10_000_000.0;
+    prevTime = currTime;
+
+--------------------------------------
+GameState and frame time (explanation)
+--------------------------------------
+
+* We initialize ``GameState`` before the main loop
+* We need to keep track of how long the last frame took
+
+  - Otherwise game speed would depend on framerate
+
+  - ``frameTimeSecs`` is a ``float`` representing *seconds*
+
+    * Allowing us to represent speeds as *units per second*
+
+      - ``speed * frameTimeSecs = movement_for_this_frame``
+
+-----------------------------
+Basic entity rendering (copy)
+-----------------------------
+
+.. code-block:: d
+
+   void renderObject(SDL2Renderer renderer, Entity.Type type, vec2f pos, float rot, float radius)
+   {
+       enum h = 1.0f;
+       static vec2f[] vertices = [vec2f(-h, -h), vec2f(h, -h),
+                                  vec2f(h,  -h), vec2f(h, h),
+                                  vec2f(h,  h),  vec2f(-h, h),
+                                  vec2f(-h, h),  vec2f(-h, -h)];
+
+       // Matrix to rotate vertices
+       const rotation = mat3f.rotateZ(rot);
+       import std.range: chunks;
+       // Iterate by pairs of points (start/end points of each line).
+       foreach(line; vertices.chunks(2))
+       {
+           // First scale vertices by radius, then rotate them, and then move (translate)
+           // them into position. Rotation needs a 3D vector, so we add a 0 and later
+           // discard the 3rd coordinate (only using X,Y).
+           const s = pos + (rotation * vec3f(radius * line[0], 0)).xy;
+           const e = pos + (rotation * vec3f(radius * line[1], 0)).xy;
+           // SDL renderer requires integer coords
+           renderer.drawLine(cast(int)s.x, cast(int)s.y, cast(int)e.x, cast(int)e.y);
+       }
+   }
+
+   void entityRendering(Entity[] objects, SDL2Renderer renderer)
+   {
+       foreach(ref object; objects)
+       {
+           // renderObject() used with UFCS as an external method of Renderer
+           renderer.renderObject(object.type, object.pos, object.rotRadians, object.radius);
+       }
+   }
+
+------------------------------------
+Basic entity rendering (explanation)
+------------------------------------
+
+* For now, we only render squares (4 lines)
+* **Ⓓ** we use `std.range.chunks <http://dlang.org/phobos/std_range.html#.Chunks>`_ to iterate by pairs of vertices
+
+  - Each pair represents a line
+  - Before drawing, vertices are:
+
+    *scaled* by radius, *rotated* by a matrix, then *translated* by ``pos``
+
+  - We discard **z** of a 3D vector by using ``.xy``
+
+    * ``.yx`` would work too, as well as ``.xyxz``
+    * **Ⓓ** Code is *generated* based on what follows the ``.`` (``opDispatch()``)
+
+* ``renderObject`` can be used as an external method of ``SDL2Renderer``
+
+  **Ⓓ** ``renderer.renderObject(...)`` is same as ``renderObject(renderer, ...)``
+
+  - This is called UFCS (uniform function call syntax)
+
+
+----------------------------------------------
+Using ``entityRendering()`` (copy/explanation)
+----------------------------------------------
+
+Copy into the ``while()`` loop in ``main()``, after ``platform.renderer.clear()``:
+
+.. code-block:: d
+
+   // Following draws will be white.
+   platform.renderer.setColor(255, 255, 255, 255);
+   entityRendering(game.objects, platform.renderer);
+
+* We set color to draw (lines) with, and call ``entityRendering()``
+
+* Test (``dub build --compiler=ldc2``, then ``./asteroids``)
+
+  - You should see a stationary white square (the player ship)
+
+`[Checkpoint 2 - rendering] <http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-2-rendering.tar.gz>`_
+
+==================
+Movement and input
+==================
+
+* Movement logic
+* Input to control the player ship
+
+---------------
+Movement (copy)
+---------------
+
+.. code-block:: d
+
+   void entityMovement(Entity[] objects, float frameTime)
+   {
+       foreach(ref object; objects)
+       {
+           // Need to multiply by frameTime to determine how much to move the object.
+           object.pos += frameTime * object.speed;
+           // Wrap the positions around (object that leaves the right edge enters the left endge)
+           // fmod() is compatible with C fmod(), i.e. not really modulo for negative numbers.
+           auto modulo = (float a, float b) => a >= 0 ? fmod(a, b) : fmod(a,b) + b;
+           object.pos.x = modulo(object.pos.x, gameAreaF.x);
+           object.pos.y = modulo(object.pos.y, gameAreaF.y);
+       }
+   }
+
+
+----------------------
+Movement (explanation)
+----------------------
+
+* **Nothing is going to move yet**
+
+  - We have no controls yet
+
+* Movement logic:
+
+  - Apply object speed (X, Y) multiplied by frame time to its position
+  - Use modulo to *wrap* the screen around
+
+    * Objects leaving left screen edge will enter at right edge, etc.
+
+  - **Ⓓ** a lambda function is used ``(args) => result``
+
+
+---------------
+Controls (code)
+---------------
+
+.. code-block:: d
+
+   vec2f directionVector(float radians)
+   {
+       // Rotates an up vector around Z in 3D, and returns the X/Y coords of that.
+       return (mat3f.rotateZ(radians) * vec3f(0.0f, -1.0f, 0.0f)).xy;
+   }
+
+   bool handleInput(ref GameState game)
+   {
+       SDL_Event event;
+       while(SDL_PollEvent(&event))
+       {
+           if(event.type == SDL_QUIT) { return false; }
+       }
+
+       int keysLen;
+       // C API function, returns a pointer.
+       const ubyte* keysPtr = SDL_GetKeyboardState(&keysLen);
+       // Bounded slice for safety
+       const keys = keysPtr[0 .. keysLen];
+
+       // Player ship controls.
+       with(game.player)
+       {
+           if(keys[SDL_SCANCODE_UP])
+           {
+               speed += game.frameTimeSecs * acceleration * rotRadians.directionVector;
+           }
+           if(keys[SDL_SCANCODE_LEFT])  { rotRadians -= game.frameTimeSecs * turnSpeed; }
+           if(keys[SDL_SCANCODE_RIGHT]) { rotRadians += game.frameTimeSecs * turnSpeed; }
+       }
+
+       return true;
+   }
+
+
+----------------------
+Controls (explanation)
+----------------------
+
+* ``directionVector()`` returns unit (length 1) vector rotated in a direction
+
+  - Can be multiplied to get a vector of any length in desired direction
+
+* We get a *slice* of all keys and check if arrow keys are pressed
+
+  - ``↑`` is used to accelerate the ship, ``←``/``→`` to rotate it
+  - **Ⓓ** we use ``with(game.player)`` to avoid typing too much
+
+    * e.g. ``acceleration`` instead of ``game.player.acceleration``
+
+
+--------------------------------------------
+Using ``entityMovement`` and ``handleInput``
+--------------------------------------------
+
+Copy into ``main()``,  replacing the ``while(SDL_PollEvent(&event))`` loop:
+
+.. code-block:: d
+
+   entityMovement(game.objects, game.frameTimeSecs);
+
+   if(!handleInput(game))
+   {
+       break;
+   }
+
+* Test (``dub build --compiler=ldc2``, then ``./asteroids``)
+
+  - You should be able to move around the "ship" with arrow keys
+
+`[Checkpoint 3 - movement and controls] <http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-3-movement.tar.gz>`_
+
+=========
+Asteroids
+=========
+
+* Asteroids
+* Collisions
+* Lives & Dying
+
+---------------------
+Some asteroids (code)
+---------------------
+
+.. code-block:: d
+
+   import std.random: uniform, uniform01;
+   Entity createAsteroid(Entity[] objects)
+   {
+       auto result = Entity(Entity.Type.AsteroidBig);
+       result.rotRadians = uniform(0.0f, 2 * PI);
+       result.speed = result.rotRadians.directionVector * uniform(30.0f, 90.0f);
+       // Try to create an asteroid that doesn't collide with anything, give up after
+       // 10 attempts if we can't so we don't loop infinitely if the game area is full.
+       foreach(attempt; 0 .. 10)
+       {
+           result.pos = vec2f(uniform01(), uniform01()) * gameAreaF;
+           // If we can't find any object that collides with result, we have a good position.
+           if(!objects.canFind!((ref o) => (result.pos - o.pos).length < result.radius + o.radius))
+           {
+               break;
+           }
+       }
+       return result;
+   }
+
+And in ``main()``, before the ``entityMovement()`` call:
+
+.. code-block:: d
+
+   // Shortcut for less typing
+   alias T = Entity.Type;
+   // This is pretty inefficient (recounting asteroids every frame).
+   enum asteroidTypes = [T.AsteroidBig, T.AsteroidMed, T.AsteroidSmall];
+   const asteroidCount = game.objects.count!((ref o) => asteroidTypes.canFind(o.type));
+
+   // If there are no asteroids, start a new round by spawning some more.
+   if(asteroidCount == 0)
+   {
+       foreach(spawn; 0 .. 4)
+       {
+           game.objects ~= createAsteroid(game.objects);
+       }
+   }
+
+----------------------------
+Some asteroids (explanation)
+----------------------------
+
+* An asteroid is just another ``Entity``
+* **Ⓓ** We use `std.random.uniform <http://dlang.org/phobos/std_random.html#.uniform>`_ for random rotation/position
+* Up to 10 attempts to generate position (to avoid collision)
+
+  - **Ⓓ** We use `std.algorithm.canFind <http://dlang.org/phobos/std_algorithm.html#.canFind>`_ with a *compile-time lambda arg*
+
+    Check if we *can find* an object colliding with generated asteroid;
+
+    - If we can't, we ``break`` out of the loop
+
+* In ``main()`` we add new asteroids if there are no asteroids.
+
+  (this code will be expanded)
+
+  * **Ⓓ** We use `std.algorithm.count <http://dlang.org/phobos/std_algorithm.html#.count>`_ to count the asteroids
+
+* Test again (``dub build --compiler=ldc2``, then ``./asteroids``).
+
+* You should see 'asteroids' as moving squares.
+
+
+------------
+Lives (code)
+------------
+
+Into ``GameState``:
+
+.. code-block:: d
+
+   enum Phase
+   {
+       Playing,
+       GameOver
+   }
+
+   Phase phase = Phase.Playing;
+
+   uint lives = 3;
+
+Into ``GameState.player()``:
+
+.. code-block:: d
+
+   assert(phase == Phase.Playing, "Can't access the player ship; game is over");
+
+In ``handleInput``, rewrite ``with(game.player)`` to:
+
+.. code-block:: d
+
+   if(game.phase == GameState.Phase.Playing) with(game.player)
+
+Into ``main()``, before ``platform.renderer.setColor(0, 0, 0, 0);``:
+
+.. code-block:: d
+
+   // Game Over if the player has run out of lives.
+   if(game.lives == 0)
+   {
+       game.phase = GameState.Phase.GameOver;
+   }
+
+
+-------------------
+Lives (explanation)
+-------------------
+
+* **nothing is going to die yet** - we have no code for collisions/dying
+* We use an ``enum`` to specify which *phase* (state) the game is in.
+* We have a limited number of lives (``3``)
+* In the ``GameState.player`` property, we check the game is not over
+
+  - We can't access the player ship when it's dead
+
+* We only check player input if the game is not over
+* If the player runs out of lives, we move into the ``GameOver`` phase
+
+  - This won't happen yet; again we have no dying
+
+
+---------------------------
+Collisions and Dying (copy)
+---------------------------
+
+Into ``Entity``:
+
+.. code-block:: d
+
+   // Is the entity dead?
+   bool dead = false;
+
+New functions:
+
+.. code-block:: d
+
+   void entityCollisions(Entity[] objects)
+   {
+       // This is a really stupid way of handling collisions (O(n**2))
+       foreach(i, ref o1; objects) foreach(ref o2; objects[i + 1 .. $])
+       {
+           if((o1.pos - o2.pos).squaredLength < o1.radius ^^ 2 + o2.radius ^^ 2)
+           {
+               o1.dead = o2.dead = true;
+           }
+       }
+   }
+
+   Entity[] entityDeaths(Entity[] objects, ref uint lives)
+   {
+       foreach(ref object; objects.filter!((ref o) => o.dead))
+       {
+           if(object.type == Entity.Type.Player && --lives > 0)
+           {
+               object = createPlayer();
+           }
+       }
+
+       return objects.remove!((ref o) => o.dead);
+   }
+
+And in ``main()``, before ``if(game.lives == 0)``:
+
+.. code-block:: d
+
+   entityCollisions(game.objects);
+   game.objects = entityDeaths(game.objects, game.lives);
+
+
+----------------------------------
+Collisions and dying (explanation)
+----------------------------------
+
+* We add a new ``dead`` member to ``Entity`` so we can flag dead entities.
+* ``entityDeaths`` respawns the player ship if there are lives left
+
+  - **Ⓓ** `std.algorithm.remove <http://dlang.org/phobos/std_algorithm.html#.remove>`_ with a CT lambda removes dead entities.
+
+* ``entityCollisions`` checks all pairs of entities for (circle) collision
+
+  - **Ⓓ** ``objects[i + 1 .. $]`` - a slice of ``objects`` after the ``i``-th element
+  - Colliding entities are marked as dead
+
+* ``entityDeaths`` uses `std.algorithm.filter <http://dlang.org/phobos/std_algorithm.html#.filter>`_ to filter dead entities 
+
+  - If the player ship is dead and there are more lives, respawn
+
+* Test again (``dub build --compiler=ldc2``, then ``./asteroids``).
+
+  - Objects should now die when colliding.
+
+`[Checkpoint 4 - collisions and dying] <http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-4-collisions.tar.gz>`_
+
+====================
+Debris & projectiles
+====================
+
+* Big asteroids should break up into smaller ones
+* Player should be able to shoot down the asteroids
+
+-------------
+Debris (copy)
+-------------
+
+Into ``Entity``:
+
+.. code-block:: d
+
+   static immutable typeDebrisCount = [0, 0, 2, 2, 0];
+   static immutable typeDebrisType  = [Type.init, Type.init, Type.AsteroidMed, Type.AsteroidSmall, Type.init];
+
+   Type debrisType()  const { return typeDebrisType[type]; }
+   uint debrisCount() const { return typeDebrisCount[type]; }
+
+A new function (somewhere below ``import std.random: uniform``):
+
+.. code-block:: d
+
+   Entity createDebris(ref Entity parent, Entity[] objects)
+   {
+       auto result = Entity(parent.debrisType);
+       foreach(attempt; 0 .. 10)
+       {
+           result.rotRadians = uniform(0.0f, 2 * PI);
+           const direction = result.rotRadians.directionVector;
+           result.pos   = parent.pos + direction * (parent.radius + result.radius) * 1.5;
+           result.speed = parent.speed + direction * uniform(30.0f, 90.0f);
+           // If nothing collides with result, we have a good position.
+           if(!objects.canFind!((ref o) => (result.pos - o.pos).length < result.radius + o.radius))
+           {
+               break;
+           }
+       }
+       return result;
+   }
+
+And into the ``foreach()`` in ``entityDeaths()``:
+
+.. code-block:: d
+
+   foreach(d; 0 .. object.debrisCount)
+   {
+       objects ~= createDebris(object, objects);
+   }
+
+
+--------------------
+Debris (explanation)
+--------------------
+
+* Debris types/counts to spawn by each entity type
+
+  - **Ⓓ** ``Type.init`` - default value of type Type.
+
+    We don't care about debris types where debris counts are 0
+
+* ``createDebris()`` spawns debris flying in random direction from parent
+
+  - Similar to ``createAsteroid`` - multiple attempts.
+  - Debris speed is added to speed of the parent entity.
+
+* ``createDebris`` is called from ``entityDeaths`` when an entity dies.
+
+* Test again (``dub build --compiler=ldc2``, then ``./asteroids``).
+
+  Asteroid collisions should result in debris - smaller asteroids.
+
+------------------
+Projectiles (copy)
+------------------
+
+.. code-block:: d
+
+   Entity createProjectile(ref Entity shooter)
+   {
+       auto result = Entity(Entity.Type.Projectile);
+       const direction = shooter.rotRadians.directionVector;
+       // Ensure the projectile gets spawned outside the shooter's collision radius.
+       result.pos        = shooter.pos + direction * (shooter.radius + result.radius) * 1.5;
+       // Speed of the projectile is added to the shooter's speed.
+       result.speed      = shooter.speed + direction * 400.0;
+       result.rotRadians = shooter.rotRadians;
+       return result;
+   }
+
+Into ``while()`` loop in ``handleInput()``:
+
+.. code-block:: d
+
+   // Ignore repeated events when the key is being held
+   if(event.type == SDL_KEYDOWN && !event.key.repeat)
+   {
+       switch(event.key.keysym.scancode)
+       {
+           case SDL_SCANCODE_SPACE:
+               if(game.phase == GameState.Phase.Playing)
+               {
+                   game.objects ~= createProjectile(game.player);
+               }
+               break;
+           default: break;
+       }
+   }
+
+-------------------------
+Projectiles (explanation)
+-------------------------
+
+* ``createProjectile`` spawns a projectile where the shooter is facing
+
+  - Projectile speed is relative to the shooter
+
+* The projectiles will last until they collide with something (for now)
+
+  - Try not to kill yourself
+
+* We ignore key repeats when a key is held
+
+  - Repeats depend on platform; if desired, implement manually
+
+* Test again (``dub build --compiler=ldc2``, then ``./asteroids``)
+
+  - The game should slightly remind you of Asteroids at this point
+
+`[Checkpoint 5 - projectiles] <http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-5-projectiles.tar.gz>`_
+
+
+======================
+Turning it into a game
+======================
+
+* Rounds
+* HUD
+* Non-placeholder graphics
+* Projectile lifetimes
+
+-------------------------
+Rounds (copy/explanation)
+-------------------------
+
+Into GameState:
+
+.. code-block:: d
+
+   uint round = 0;
+
+Update the ``if(asteroidCount == 0)`` code in ``main()`` with this:
+
+.. code-block:: d
+
+   // If there are no asteroids, start a new round by spawning some more.
+   if(asteroidCount == 0)
+   {
+       ++game.round;
+       // 2, 4, 8, 16 asteroids in rounds 1,2,3,4 but no more in successive rounds.
+       foreach(spawn; 0 .. min(16, 2 ^^ game.round))
+       {
+           game.objects ~= createAsteroid(game.objects);
+       }
+   }
+
+* A *round*/level ends when all asteroids are destroyed.
+
+* More asteroids are spawned in higher rounds
+
+  - **Ⓓ** but never more than 16 - we use `std.algorithm.min <http://dlang.org/phobos/std_algorithm.html#.min>`_ to force this
+
+
+----------
+HUD (copy)
+----------
+
+Copy into ``main()`` after the ``entityRendering()`` call:
+
+.. code-block:: d
+
+   // Draw player 'lives'
+   foreach(life; 0 .. game.lives)
+   {
+       platform.renderer.renderObject(Entity.Type.Player,
+                                      vec2f((1 + life) * 12.0f, 20.0f), 0.0f, 6.0f);
+   }
+
+   string text;
+   final switch(game.phase)
+   {
+       case GameState.Phase.Playing:  text = "Round %s".format(game.round); break;
+       case GameState.Phase.GameOver: text = "Game Over"; break;
+   }
+
+   // Extremely ineffecient way of displaying text
+   // -- in a real project, this should be cached
+   auto textSurface = platform.font.renderTextBlended(text, SDL_Color(255, 255, 255, 255));
+   scope(exit) { textSurface.close(); }
+   auto textTexture = new SDL2Texture(platform.renderer, textSurface);
+   scope(exit) { textTexture.close(); }
+
+   platform.renderer.copy(textTexture, (gameArea.x - textSurface.width) / 2, 16);
+
+
+-----------------
+HUD (explanation)
+-----------------
+
+* We draw 'lifes' with ``renderObject``, as if drawing the player ship
+* **Ⓓ** ``final switch`` ensures we handle all Phases
+* We render a string to a texture and draw it to the screen
+
+  - This is extremely inefficient (texture thrown away each frame)
+
+    In a 'real' game, use caching, glyph atlas texture, etc.
+
+
+* Test again (``dub build --compiler=ldc2``, then ``./asteroids``)
+
+  - You should see the HUD and more asteroids in each round
+
+`[Checkpoint 6 - HUD and rounds] <http://defenestrate.eu/_static/ossvikend/intro-gamedev-d/checkpoint-6-hud.tar.gz>`_
+
+----------------------
+Better graphics (copy)
+----------------------
+
+Into ``Entity``:
+
+.. code-block:: d
+
+    alias V = vec2f;
+
+    static immutable graphics = [[V(0.0, -1.2),    V(0.8,  1.0),
+                                  V(0.8, 1.0),     V(-0.8, 1.0),
+                                  V(0.0, -1.2),    V(-0.8, 1.0)],
+                                 [V(0.5,  -1.2),   V(0.5,  1.2),
+                                  V(-0.5, -1.2),   V(-0.5, 1.2)],
+                                 [V(-1.0,  -0.75), V(-0.75, -0.82),
+                                  V(-0.75, -0.82), V(-0.25, -1.0),
+                                  V(-0.25, -1.0),  V(0.8, -0.32),
+                                  V(0.8,   -0.32), V(0.92, 0.35),
+                                  V(0.92,  0.35),  V(0.65, 0.55),
+                                  V(0.65,  0.55),  V(-0.25, 0.35),
+                                  V(-0.25, 0.35),  V(-1.0, -0.5),
+                                  V(-1.0,  -0.5),  V(-1.0, -0.75)],
+                                 [V(-1.0,  -0.75), V(-0.75, -0.82),
+                                  V(-0.75, -0.82), V(-0.25, -1.0),
+                                  V(-0.25, -1.0),  V(0.5, 0.0),
+                                  V(0.5, 0.0),     V(0.65,  0.55),
+                                  V(0.65,  0.55),  V(-0.25, 0.35),
+                                  V(-0.25, 0.35),  V(-1.0, -0.5),
+                                  V(-1.0,  -0.5),  V(-1.0, -0.75)],
+                                 [V(-1.0,  -0.75), V(-0.75, -0.82),
+                                  V(-0.75, -0.82), V(0.8,   -0.32),
+                                  V(0.8,   -0.32), V(0.92, 0.35),
+                                  V(0.92,  0.35),  V(0.65, 0.55),
+                                  V(0.65, 0.55),   V(-0.2, 0.4),
+                                  V(-0.2, 0.4),    V(-1.0, -0.75)]];
+
+And in ``renderObject()``, replace the ``vertices`` definition with:
+
+.. code-block:: d
+
+   auto vertices = Entity.graphics[type];
+
+
+-----------------------------
+Better graphics (explanation)
+-----------------------------
+
+* **Ⓓ** An ``alias`` is used so we don't have to type ``vec2f`` all over the place
+* ``graphics``: array of vertices (paired into lines) for all entity types
+
+  - Numbers determined with with grid paper and pencil
+* ``renderObject()`` draws entity type graphics instead of just a square
+
+* Test again (``dub build --compiler=ldc2``, then ``./asteroids``)
+
+  - HUD should be visible
+
+
+---------------------------
+Projectile lifetimes (copy)
+---------------------------
+
+Into ``Entity``:
+
+.. code-block:: d
+
+    // Time left till the entity is destroyed.
+    float timeLeft = float.infinity;
+
+Into ``createProjectile``:
+
+.. code-block:: d
+
+    result.timeLeft = 1.4f;
+
+New function:
+
+.. code-block:: d
+
+   void entityTimeLeft(Entity[] objects, float frameTime)
+   {
+       foreach(ref object; objects)
+       {
+           object.timeLeft -= frameTime;
+           // Kill objects that run out of time
+           object.dead = object.dead || object.timeLeft <= 0.0f;
+       }
+   }
+
+And use it (in ``main()`` after ``entityMovement()``):
+
+.. code-block:: d
+
+   entityTimeLeft(game.objects, game.frameTimeSecs);
+
+----------------------------------
+Projectile lifetimes (explanation)
+----------------------------------
+
+* We entity lifetimes
+* We use ``float.infinity`` for infinite lifetimes (default)
+* Projectile lifetimes are now limited to 1.4s
+
+
+=========
+End stuff
+=========
+
+
+-------
+D Links
+-------
+
+* `Programming in D <http://ddili.org/ders/d.en/index.html>`_ (by Ali Çehreli)
+
+  - Really good and comphrehensive introductory D book 
+  - Written for non-programmers so can be a bit slow
+
+* `Forum/newsgroup <forum.dlang.org>`_
+
+  - Language discussion, learning D, project announcements
+
+* `Wiki <wiki.dlang.org>`_
+
+* `Standard library docs <http://dlang.org/phobos/index.html>`_
+
+* `DUB repository <code.dlang.org>`_
+
+  - Many D libs (increasing as DUB is becoming standard)
+
+* `DPaste <http://dpaste.dzfl.pl/>`_ (Pastebin that can run D code)
+
+* `Interactive compiler <http://d.godbolt.org/>`_ with ASM view
+
+
+----------------
+D game lib links
+----------------
+
+* `Derelict <https://github.com/DerelictOrg>`_ - Bindings to all the necessary C libs
+
+   - SDL, GL, sound, physics, images, fonts, videos, models...
+* `gfm <https://github.com/d-gamedev-team/gfm>`_ - More D-style libs, still unstable
+* `Dash <https://github.com/Circular-Studios/Dash>`_ - Engine by Circular Studios
+* `Vladimir Panteleev's code <https://github.com/CyberShadow/ae>`_ - The Worms Armageddon guy
+* More on http://code.dlang.org
+
+------------------
+D IDE/editor links
+------------------
+
+* `D in Vim <http://wiki.dlang.org/D_in_Vim>`_
+* `Emacs D mode <https://github.com/Emacs-D-Mode-Maintainers/Emacs-D-Mode>`_
+* `DDT (Eclipse) <https://code.google.com/p/ddt/>`_
+* `Mono-D (MonoDevelop) <http://wiki.dlang.org/Mono-D>`_
+* `Visual D (widle only) <http://rainers.github.io/visuald/visuald/StartPage.html>`_
+
+Full list of `IDEs <http://wiki.dlang.org/IDEs>`_ and `Editors <http://wiki.dlang.org/Editors>`_ on wiki.
+
+=========
+It's over
+=========
+
+
+
+`IHRA <http://web.ics.upjs.sk/ihra/>`_
