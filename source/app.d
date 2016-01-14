@@ -4,10 +4,11 @@
 //          http://www.boost.org/LICENSE_1_0.txt)
 
 import std.stdio;
+import std.string;
 import std.algorithm: canFind, count, filter, min, remove; // (1)
 import std.math: fmod, PI; // (2)
 import gfm.math, gfm.sdl2; // (3)
-import std.logger; // std.experimental.logger in newer versions
+import std.experimental.logger;
 
 
 // Compile-time constants
@@ -28,9 +29,9 @@ struct GamePlatform
     this(Logger log)
     {
         sdl2   = new SDL2(log);
-        scope(failure) { sdl2.close(); }
+        scope(failure) { sdl2.destroy(); }
         sdlttf = new SDLTTF(sdl2);
-        scope(failure) { sdlttf.close(); }
+        scope(failure) { sdlttf.destroy(); }
 
         // Hide mouse cursor
         SDL_ShowCursor(SDL_DISABLE);
@@ -39,26 +40,26 @@ struct GamePlatform
         const windowFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS;
         window = new SDL2Window(sdl2, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                                 gameArea.x, gameArea.y, windowFlags);
-        scope(failure) { window.close(); }
+        scope(failure) { window.destroy(); }
 
         // SDL renderer. For 2D drawing, this is easier to use than OpenGL.
         renderer = new SDL2Renderer(window, SDL_RENDERER_ACCELERATED); // SDL_RENDERER_SOFTWARE
-        scope(failure) { renderer.close(); }
+        scope(failure) { renderer.destroy(); }
 
         // Load the font.
         import std.file: thisExePath;
         import std.path: buildPath, dirName;
         font = new SDLFont(sdlttf, thisExePath.dirName.buildPath("DroidSans.ttf"), 20);
-        scope(failure) { font.close(); }
+        scope(failure) { font.destroy(); }
     }
 
     ~this()
     {
-        font.close();
-        renderer.close();
-        window.close();
-        sdlttf.close();
-        sdl2.close();
+        font.destroy();
+        renderer.destroy();
+        window.destroy();
+        sdlttf.destroy();
+        sdl2.destroy();
     }
 }
 
@@ -376,7 +377,7 @@ bool handleInput(ref GameState game)
 
 void main()
 {
-    auto log = new FileLogger("asteroids-log.txt", "Asteroids log");
+    auto log = new FileLogger("asteroids-log.txt");
 
     // Note: Many of the SDL init functions may fail and throw exceptions. In a real game,
     // this should be handled (e.g. a fallback renderer if accelerated doesn't work).
@@ -470,9 +471,9 @@ void main()
         // Extremely ineffecient way of displaying text
         // -- in a real project, this should be cached
         auto textSurface = platform.font.renderTextBlended(text, SDL_Color(255, 255, 255, 255));
-        scope(exit) { textSurface.close(); }
+        scope(exit) { textSurface.destroy(); }
         auto textTexture = new SDL2Texture(platform.renderer, textSurface);
-        scope(exit) { textTexture.close(); }
+        scope(exit) { textTexture.destroy(); }
 
         platform.renderer.copy(textTexture, (gameArea.x - textSurface.width) / 2, 16);
 
